@@ -16,11 +16,20 @@ const generateBatch = async (
 ): Promise<Question[]> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
+  // Custom Instruction Logic:
+  // For Reading Comprehension, we MUST allow passages.
+  // For others, we force conciseness to speed up generation.
+  const isReadingComp = topicName.toLowerCase().includes('reading comprehension') || topicName.toLowerCase().includes('comprehension');
+  
+  const constraint = isReadingComp 
+    ? "Include a short passage (3-5 sentences) followed by the question." 
+    : "No markdown. concise text.";
+
   const systemInstruction = `UPSC CDS Exam Generator. Topic: ${topicName}. 
   Task: Generate ${count} MCQs.
   Output: JSON Array. 
   Schema: id (string), text (string), options (string[]), correctAnswer (0-3 int).
-  Constraint: No markdown. concise text.`;
+  Constraint: ${constraint}`;
 
   const response = await ai.models.generateContent({
     model: FAST_MODEL,

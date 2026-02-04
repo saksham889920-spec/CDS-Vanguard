@@ -14,9 +14,20 @@ const TestEngine: React.FC<TestEngineProps> = ({ questions, subject, topic, isKe
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, number | null>>({});
   
+  // Tactical Elimination State: Map of QuestionID -> Array of eliminated option indices
+  const [eliminatedOptions, setEliminatedOptions] = useState<Record<string, number[]>>({});
+  
   const getInitialTime = useCallback(() => {
-    return subject.section === SectionType.MATHEMATICS ? 120 : 45;
-  }, [subject.section]);
+    // Reading Comprehension needs more time for passage reading, but still requires speed.
+    // 90 seconds (1.5 mins) is the sweet spot.
+    if (topic.id === 'reading-comprehension') return 90;
+    
+    // Mathematics requires calculation time.
+    if (subject.section === SectionType.MATHEMATICS) return 120;
+    
+    // Standard GK/English questions are rapid fire.
+    return 45;
+  }, [subject.section, topic.id]);
 
   const [timeLeft, setTimeLeft] = useState(getInitialTime());
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
@@ -29,7 +40,6 @@ const TestEngine: React.FC<TestEngineProps> = ({ questions, subject, topic, isKe
   };
 
   const handleFinish = useCallback(() => {
-    // If background fetch isn't ready, we might need to wait 1-2 seconds here
     if (isKeyLoading) return;
 
     if (timerRef.current) clearInterval(timerRef.current);
@@ -70,9 +80,25 @@ const TestEngine: React.FC<TestEngineProps> = ({ questions, subject, topic, isKe
   }, [timeLeft, nextQuestion]);
 
   const currentQuestion = questions[currentIndex];
+  const currentEliminations = eliminatedOptions[currentQuestion.id] || [];
 
   const handleSelectOption = (index: number) => {
+    // Prevent selecting if eliminated (optional rule, but good for strictness)
+    // if (currentEliminations.includes(index)) return; 
+    
     setSelectedOptions(prev => ({ ...prev, [currentQuestion.id]: index }));
+  };
+
+  const toggleElimination = (e: React.MouseEvent, index: number) => {
+    e.stopPropagation(); // Prevent triggering selection
+    setEliminatedOptions(prev => {
+      const current = prev[currentQuestion.id] || [];
+      const isEliminated = current.includes(index);
+      const updated = isEliminated 
+        ? current.filter(i => i !== index) 
+        : [...current, index];
+      return { ...prev, [currentQuestion.id]: updated };
+    });
   };
 
   return (
@@ -104,7 +130,7 @@ const TestEngine: React.FC<TestEngineProps> = ({ questions, subject, topic, isKe
               Question {currentIndex + 1}
             </span>
             <span className="text-xs font-bold text-slate-400 italic">
-              {subject.section === SectionType.MATHEMATICS ? '120s limit' : '45s limit'}
+               {timeLeft}s limit
             </span>
           </div>
           
@@ -113,26 +139,47 @@ const TestEngine: React.FC<TestEngineProps> = ({ questions, subject, topic, isKe
           </h3>
 
           <div className="grid grid-cols-1 gap-4">
-            {currentQuestion.options.map((option, idx) => (
-              <button
-                key={idx}
-                onClick={() => handleSelectOption(idx)}
-                className={`w-full text-left p-4 rounded-xl border-2 transition-all duration-200 flex items-center group
-                  ${selectedOptions[currentQuestion.id] === idx 
-                    ? 'border-indigo-600 bg-indigo-50 shadow-md translate-x-1' 
-                    : 'border-slate-100 hover:border-indigo-200 hover:bg-slate-50'}`}
-              >
-                <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center mr-4 flex-shrink-0 transition-colors
-                  ${selectedOptions[currentQuestion.id] === idx 
-                    ? 'border-indigo-600 bg-indigo-600 text-white' 
-                    : 'border-slate-300 group-hover:border-indigo-400'}`}>
-                  {String.fromCharCode(65 + idx)}
+            {currentQuestion.options.map((option, idx) => {
+              const isEliminated = currentEliminations.includes(idx);
+              const isSelected = selectedOptions[currentQuestion.id] === idx;
+
+              return (
+                <div key={idx} className="relative group">
+                  <button
+                    onClick={() => handleSelectOption(idx)}
+                    className={`w-full text-left p-4 rounded-xl border-2 transition-all duration-200 flex items-center
+                      ${isSelected 
+                        ? 'border-indigo-600 bg-indigo-50 shadow-md translate-x-1' 
+                        : 'border-slate-100 hover:border-indigo-200 hover:bg-slate-50'}
+                      ${isEliminated ? 'opacity-40 grayscale' : 'opacity-100'}
+                    `}
+                  >
+                    <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center mr-4 flex-shrink-0 transition-colors
+                      ${isSelected 
+                        ? 'border-indigo-600 bg-indigo-600 text-white' 
+                        : 'border-slate-300 group-hover:border-indigo-400'}`}>
+                      {String.fromCharCode(65 + idx)}
+                    </div>
+                    <span className={`text-lg ${isSelected ? 'text-indigo-900 font-semibold' : 'text-slate-700'} ${isEliminated ? 'line-through decoration-2 decoration-slate-400' : ''}`}>
+                      {option}
+                    </span>
+                  </button>
+                  
+                  {/* Tactical Elimination Button */}
+                  <button
+                    onClick={(e) => toggleElimination(e, idx)}
+                    title={isEliminated ? "Restore Option" : "Eliminate Option"}
+                    className={`absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full transition-all
+                      ${isEliminated 
+                        ? 'bg-slate-800 text-white shadow-sm' 
+                        : 'bg-slate-100 text-slate-400 hover:bg-red-100 hover:text-red-500 opacity-0 group-hover:opacity-100'}
+                    `}
+                  >
+                    {isEliminated ? '↺' : '✕'}
+                  </button>
                 </div>
-                <span className={`text-lg ${selectedOptions[currentQuestion.id] === idx ? 'text-indigo-900 font-semibold' : 'text-slate-700'}`}>
-                  {option}
-                </span>
-              </button>
-            ))}
+              );
+            })}
           </div>
         </div>
 
