@@ -39,9 +39,9 @@ export interface Question {
   id: string;
   text: string;
   options: string[];
-  correctAnswer?: number; // Optional until background key loads
-  explanation?: string;   // Optional until background key loads
-  intelBrief?: ConceptBrief;
+  correctAnswer: number; // REQUIRED: Generated in Phase 1 for accuracy
+  explanation?: string;  // Optional: Loaded in Phase 2
+  intelBrief?: ConceptBrief; // Optional: Loaded in Phase 2
 }
 
 export interface UserResponse {

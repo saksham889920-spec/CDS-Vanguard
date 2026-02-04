@@ -4,8 +4,10 @@ import { Question, SectionType, ConceptBrief } from "./types.ts";
 import { getGenericFallback } from "./fallbackData.ts";
 
 /**
- * PHASE 1: ULTRA-FAST START
- * Generates only text and options to get the user into the test immediately.
+ * PHASE 1: AUTHORITATIVE SPRINT
+ * Generates Question, Options, AND Correct Answer.
+ * This guarantees the scoring logic is fixed and accurate from the start.
+ * Speed: Very Fast (No explanations/briefs generated here).
  */
 export const generateQuestions = async (
   section: SectionType,
@@ -16,16 +18,20 @@ export const generateQuestions = async (
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const model = "gemini-3-flash-preview";
   
-  const systemInstruction = `UPSC CDS Strategist. Rapidly generate 10 MCQs for ${topicName}. Return ONLY a JSON array of objects with 'id', 'text', and 'options' (array of 4). Minimize words to maximize speed. Difficulty: High.`;
+  const systemInstruction = `UPSC CDS Exam Generator. 
+  Task: Create 10 high-quality MCQs for '${topicName}'. 
+  Output: JSON Array only. 
+  Fields: id, text, options (4 items), correctAnswer (0-3 index).
+  Constraint: Ensure one option is indisputably correct.`;
 
   try {
     const response = await ai.models.generateContent({
       model,
-      contents: `Generate 10 ${topicName} MCQs for CDS. JSON format.`,
+      contents: `Generate 10 MCQs for ${topicName}. JSON format.`,
       config: {
         systemInstruction,
         temperature: 0.7,
-        thinkingConfig: { thinkingBudget: 0 },
+        thinkingConfig: { thinkingBudget: 0 }, // Zero thinking for maximum speed
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.ARRAY,
@@ -34,9 +40,10 @@ export const generateQuestions = async (
             properties: {
               id: { type: Type.STRING },
               text: { type: Type.STRING },
-              options: { type: Type.ARRAY, items: { type: Type.STRING } }
+              options: { type: Type.ARRAY, items: { type: Type.STRING } },
+              correctAnswer: { type: Type.INTEGER }
             },
-            required: ["id", "text", "options"]
+            required: ["id", "text", "options", "correctAnswer"]
           }
         }
       }
@@ -46,62 +53,75 @@ export const generateQuestions = async (
     if (!text) throw new Error("Empty Response");
     return JSON.parse(text) as Question[];
   } catch (error) {
-    console.error("MCQ Sprint Failed:", error);
+    console.error("Phase 1 Generation Failed:", error);
     return getGenericFallback(topicName);
   }
 };
 
 /**
- * PHASE 2: SILENT DISPATCH
- * Fetches answers and explanations for the specific questions generated in Phase 1.
+ * PHASE 2: DEEP ENRICHMENT (Background)
+ * Generates Explanations AND Intel Briefs for the already-created questions.
+ * This runs while the user is taking the test.
  */
-export const fetchSolutionKey = async (questions: Question[]): Promise<Record<string, { correctAnswer: number; explanation: string }>> => {
+export const fetchEnrichmentData = async (questions: Question[], topicName: string): Promise<Record<string, { explanation: string; intelBrief: ConceptBrief }>> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const model = "gemini-3-flash-preview";
 
-  const prompt = `For these 10 UPSC questions, provide the correct answer index (0-3) and a professional UPSC-style explanation.
-  Questions: ${JSON.stringify(questions.map(q => ({ id: q.id, text: q.text })))}`;
+  // We send the questions AND the correct answer to the model so it can explain WHY it is correct.
+  const inputPayload = questions.map(q => ({
+    id: q.id,
+    question: q.text,
+    correctOption: q.options[q.correctAnswer],
+    allOptions: q.options
+  }));
+
+  const prompt = `For these 10 UPSC CDS questions, provide:
+  1. A detailed Explanation.
+  2. A Strategic Intel Brief (Core Principle, Context, Tactics, Recall Hacks).
+  Input Data: ${JSON.stringify(inputPayload)}`;
 
   try {
     const response = await ai.models.generateContent({
       model,
       contents: prompt,
       config: {
-        systemInstruction: "You are the UPSC Chief Examiner. Provide precise answer indices and high-quality educational explanations. Return JSON.",
-        temperature: 0.4,
+        systemInstruction: "You are a UPSC Senior Strategist. Provide deep analytical explanations and strategic briefs. Return a JSON Map keyed by Question ID.",
+        temperature: 0.5,
         thinkingConfig: { thinkingBudget: 0 },
         responseMimeType: "application/json",
         responseSchema: {
-          type: Type.ARRAY,
-          items: {
+          type: Type.OBJECT,
+          additionalProperties: {
             type: Type.OBJECT,
             properties: {
-              id: { type: Type.STRING },
-              correctAnswer: { type: Type.INTEGER },
-              explanation: { type: Type.STRING }
+              explanation: { type: Type.STRING },
+              intelBrief: {
+                type: Type.OBJECT,
+                properties: {
+                  corePrinciple: { type: Type.STRING },
+                  upscContext: { type: Type.STRING },
+                  strategicApproach: { type: Type.STRING },
+                  recallHacks: { type: Type.STRING }
+                },
+                required: ["corePrinciple", "upscContext", "strategicApproach", "recallHacks"]
+              }
             },
-            required: ["id", "correctAnswer", "explanation"]
+            required: ["explanation", "intelBrief"]
           }
         }
       }
     });
 
     const text = (response.text || "").replace(/```json|```/g, "").trim();
-    const data = JSON.parse(text) as Array<{ id: string; correctAnswer: number; explanation: string }>;
-    
-    const keyMap: Record<string, { correctAnswer: number; explanation: string }> = {};
-    data.forEach(item => {
-      keyMap[item.id] = { correctAnswer: item.correctAnswer, explanation: item.explanation };
-    });
-    return keyMap;
+    return JSON.parse(text);
   } catch (error) {
-    console.error("Solution Key Background Fetch Failed:", error);
+    console.error("Phase 2 Enrichment Failed:", error);
     return {};
   }
 };
 
 /**
- * PHASE 3: HIGH-QUALITY ON-DEMAND INTEL
+ * FALLBACK: Individual Brief Fetch (Only used if Phase 2 fails)
  */
 export const getDetailedConceptBrief = async (questionText: string, topicName: string): Promise<ConceptBrief> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });

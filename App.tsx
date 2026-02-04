@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { SYLLABUS } from './constants.ts';
 import { Subject, Topic, Question, UserResponse, SectionType, Category } from './types.ts';
-import { generateQuestions, fetchSolutionKey } from './geminiService.ts';
+import { generateQuestions, fetchEnrichmentData } from './geminiService.ts';
 import TestEngine from './components/TestEngine.tsx';
 import ResultView from './components/ResultView.tsx';
 
@@ -26,22 +26,27 @@ const App: React.FC = () => {
     setState('LOADING');
     setError(null);
     try {
-      // Pass 1: Questions and Options only (FAST)
+      // PHASE 1: Sprint (Questions + Options + CorrectAnswer)
+      // This is fast and authoritative.
       const generated = await generateQuestions(subject.section, subject.name, topic.id, topic.name);
       setQuestions(generated);
       setSelectedTopic(topic);
       setState('EXAM');
 
-      // Pass 2: Background Solutions (Silent Dispatch)
+      // PHASE 2: Deep Enrichment (Explanations + Briefs)
+      // Runs in background. No need to block user.
       setIsKeyLoading(true);
-      fetchSolutionKey(generated).then(keyMap => {
+      fetchEnrichmentData(generated, topic.name).then(enrichmentMap => {
         setQuestions(prev => prev.map(q => ({
           ...q,
-          correctAnswer: keyMap[q.id]?.correctAnswer ?? 0,
-          explanation: keyMap[q.id]?.explanation ?? "UPSC analysis verification pending."
+          explanation: enrichmentMap[q.id]?.explanation ?? "Analysis pending...",
+          intelBrief: enrichmentMap[q.id]?.intelBrief
         })));
         setIsKeyLoading(false);
-      }).catch(() => setIsKeyLoading(false));
+      }).catch((e) => {
+        console.error("Background enrichment failed", e);
+        setIsKeyLoading(false);
+      });
 
     } catch (err) {
       setError("Vault fallback activated.");
@@ -235,7 +240,7 @@ const App: React.FC = () => {
             questions={questions} 
             subject={selectedSubject} 
             topic={selectedTopic} 
-            isKeyLoading={isKeyLoading}
+            isKeyLoading={false} /* We don't block submission anymore as Answer is in Phase 1 */
             onFinish={handleFinishTest} 
           />
         )}
@@ -251,7 +256,7 @@ const App: React.FC = () => {
       </main>
       
       <footer className="py-20 border-t border-slate-100 text-center bg-slate-50/50">
-        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.5em]">CDS VANGUARD • Strategic UPSC Engine • v3.1 (Ghost Key Pipeline)</p>
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.5em]">CDS VANGUARD • Strategic UPSC Engine • v4.0 (Authoritative Sprint)</p>
       </footer>
     </div>
   );

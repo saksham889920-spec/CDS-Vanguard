@@ -20,7 +20,6 @@ const ResultView: React.FC<ResultViewProps> = ({ questions, responses, subject, 
   const score = (correctCount * 1) - ((attemptedCount - correctCount) * 0.33);
 
   const handleExpandBrief = async (qId: string, qText: string) => {
-    // If already loaded or currently loading, ignore
     if (briefs[qId] || loadingBriefs[qId]) return;
 
     setLoadingBriefs(prev => ({ ...prev, [qId]: true }));
@@ -70,7 +69,8 @@ const ResultView: React.FC<ResultViewProps> = ({ questions, responses, subject, 
           const userResp = responses.find(r => r.questionId === q.id);
           const isCorrect = userResp?.isCorrect;
           const userIdx = userResp?.selectedOption;
-          const brief = briefs[q.id];
+          // Check if brief is already pre-loaded from Phase 2, or locally loaded via click
+          const brief = q.intelBrief || briefs[q.id];
           const isLoading = loadingBriefs[q.id];
 
           return (
@@ -110,7 +110,7 @@ const ResultView: React.FC<ResultViewProps> = ({ questions, responses, subject, 
               <div className="space-y-4">
                 <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
                   <h5 className="text-[9px] font-black uppercase tracking-[0.2em] mb-2 text-slate-400">Explanation</h5>
-                  <p className="text-slate-600 text-sm leading-relaxed">{q.explanation}</p>
+                  <p className="text-slate-600 text-sm leading-relaxed">{q.explanation || "Analysis pending..."}</p>
                 </div>
 
                 {brief ? (
