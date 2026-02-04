@@ -26,7 +26,7 @@ const App: React.FC = () => {
     setError(null);
     try {
       // PHASE 1: Parallel Sprint (Questions + Options + CorrectAnswer)
-      // Uses 2x Concurrent Workers for max speed.
+      // Uses 5x Concurrent Workers for max speed.
       const generated = await generateQuestions(subject.section, subject.name, topic.id, topic.name);
       setQuestions(generated);
       setSelectedTopic(topic);
@@ -197,13 +197,31 @@ const App: React.FC = () => {
   };
 
   const renderLoading = () => (
-    <div className="flex flex-col items-center justify-center min-h-[70vh] p-8 text-center">
-      <div className="relative mb-10">
-        <div className="w-20 h-20 border-[6px] border-slate-100 border-t-slate-900 rounded-full animate-spin"></div>
-        <div className="absolute top-0 left-0 w-20 h-20 flex items-center justify-center text-[10px] font-black text-slate-900">INTEL</div>
+    <div className="flex flex-col items-center justify-center min-h-[70vh] p-8 text-center animate-fade-in">
+      <div className="relative mb-12">
+        <div className="w-24 h-24 border-[6px] border-slate-100 border-t-indigo-600 rounded-full animate-spin"></div>
+        <div className="absolute top-0 left-0 w-24 h-24 flex items-center justify-center text-[10px] font-black text-slate-900 uppercase tracking-widest">
+          NET-5
+        </div>
       </div>
-      <h2 className="text-2xl font-black text-slate-900 uppercase tracking-[0.5em] mb-2">Assembling Vault</h2>
-      <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">Deploying concurrent simulation streams...</p>
+      
+      <h2 className="text-3xl font-black text-slate-900 uppercase tracking-[0.2em] mb-8">Deploying 5x Uplinks</h2>
+      
+      <div className="w-full max-w-sm space-y-3">
+        {['ALPHA', 'BETA', 'GAMMA', 'DELTA', 'EPSILON'].map((channel, i) => (
+          <div key={channel} className="flex items-center justify-between bg-white px-6 py-3 rounded-xl border border-slate-100 shadow-sm animate-pulse" style={{ animationDelay: `${i * 100}ms` }}>
+            <div className="flex items-center space-x-3">
+              <div className="w-2 h-2 bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
+              <span className="text-xs font-black text-slate-700 tracking-widest uppercase">Channel {channel}</span>
+            </div>
+            <span className="text-[10px] font-bold text-slate-400">CONNECTING...</span>
+          </div>
+        ))}
+      </div>
+      
+      <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mt-10 opacity-70">
+        Aggregating Intelligence from Multiple Vectors...
+      </p>
     </div>
   );
 

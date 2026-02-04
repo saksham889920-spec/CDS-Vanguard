@@ -15,7 +15,7 @@ export const FALLBACK_QUESTIONS: Record<string, Question[]> = {
 };
 
 /**
- * Procedurally generates 10 unique questions for ANY topic to handle API limits 
+ * Procedurally generates 15 unique questions for ANY topic to handle API limits 
  * without requiring a heavy external database.
  */
 export const getGenericFallback = (topicName: string): Question[] => {
@@ -29,11 +29,16 @@ export const getGenericFallback = (topicName: string): Question[] => {
     "Arrange the following components of {topic} in their correct chronological or structural order.",
     "What is the primary distinction between the Classical and Modern interpretations of {topic}?",
     "How does {topic} directly influence the strategic defense posture of a nation?",
-    "Evaluate the statement: '{topic} is the cornerstone of administrative efficiency in the Indian context.'"
+    "Evaluate the statement: '{topic} is the cornerstone of administrative efficiency in the Indian context.'",
+    "Identify the anomaly in the standard application of {topic} principles.",
+    "Which international protocol significantly modified the domestic approach to {topic}?",
+    "Determine the validity of the Assertion (A) and Reason (R) regarding {topic}.",
+    "Which of the following timelines accurately represents the development of {topic}?",
+    "Calculate or assess the net impact of {topic} on the relevant sector."
   ];
 
-  // Strictly limited to 10
-  return Array.from({ length: 10 }).map((_, i) => {
+  // Strictly limited to 15 (Matches new Live Engine standard)
+  return Array.from({ length: 15 }).map((_, i) => {
     const seed = seeds[i % seeds.length];
     const questionText = seed.replace(/{topic}/g, topicName) + ` (Variant ${i + 1})`;
     

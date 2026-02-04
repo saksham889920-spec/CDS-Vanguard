@@ -1,9 +1,24 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { Question, SectionType, ConceptBrief } from "./types.ts";
 import { getGenericFallback } from "./fallbackData.ts";
 
 const FAST_MODEL = "gemini-2.5-flash";
+
+/**
+ * KEY ROTATION LOGIC
+ * Supports multiple API keys separated by commas in the environment variable.
+ * Usage: API_KEY="key1,key2,key3"
+ */
+const API_KEYS = (process.env.API_KEY || "").split(",").map(k => k.trim()).filter(k => k);
+let keyIndex = 0;
+
+const getNextApiKey = (): string => {
+  if (API_KEYS.length === 0) return "";
+  const key = API_KEYS[keyIndex];
+  keyIndex = (keyIndex + 1) % API_KEYS.length;
+  // console.log(`[System] Rotating to Key Index: ${keyIndex}`); // Debug log (optional)
+  return key;
+};
 
 /**
  * HELPER: Determines the specific formatting rule based on topic.
@@ -49,7 +64,8 @@ const generateBatch = async (
   count: number, 
   offset: number
 ): Promise<Question[]> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  // Use a rotated key for this specific request
+  const ai = new GoogleGenAI({ apiKey: getNextApiKey() });
   
   const constraint = getFormatInstruction(topicName);
 
@@ -94,9 +110,9 @@ const generateBatch = async (
 };
 
 /**
- * PHASE 1: PARALLEL SPRINT
- * Splits 10 questions into 2 parallel requests of 5.
- * Theoretical Speedup: ~40-50% faster than generating 10 sequentially.
+ * PHASE 1: PARALLEL SPRINT (15 Questions)
+ * Splits 15 questions into 5 parallel requests of 3.
+ * Uses Key Rotation to distribute load.
  */
 export const generateQuestions = async (
   section: SectionType,
@@ -105,13 +121,18 @@ export const generateQuestions = async (
   topicName: string
 ): Promise<Question[]> => {
   try {
-    // Parallel Execution: Launch two workers simultaneously
-    const [batch1, batch2] = await Promise.all([
-      generateBatch(topicName, 5, 0),
-      generateBatch(topicName, 5, 1)
+    // Parallel Execution: Launch FIVE workers simultaneously
+    // 5 workers x 3 questions = 15 total questions.
+    // This utilizes up to 5 different API keys if provided.
+    const batches = await Promise.all([
+      generateBatch(topicName, 3, 0),
+      generateBatch(topicName, 3, 1),
+      generateBatch(topicName, 3, 2),
+      generateBatch(topicName, 3, 3),
+      generateBatch(topicName, 3, 4)
     ]);
     
-    return [...batch1, ...batch2];
+    return batches.flat();
   } catch (error) {
     console.error("Parallel Generation Failed:", error);
     return getGenericFallback(topicName);
@@ -123,7 +144,8 @@ export const generateQuestions = async (
  * Fetches both the strategic brief AND the detailed explanation in one go.
  */
 export const getDetailedConceptBrief = async (questionText: string, topicName: string): Promise<ConceptBrief> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  // Rotate key for explanation fetch as well
+  const ai = new GoogleGenAI({ apiKey: getNextApiKey() });
 
   const response = await ai.models.generateContent({
     model: FAST_MODEL,

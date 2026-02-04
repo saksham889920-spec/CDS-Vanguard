@@ -1,5 +1,5 @@
 
-const DAILY_QUOTA = 150;
+const DAILY_QUOTA = 500;
 const STORAGE_KEY = 'vanguard_intel_energy';
 const DATE_KEY = 'vanguard_last_refresh';
 
