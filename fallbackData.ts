@@ -32,7 +32,7 @@ export const getGenericFallback = (topicName: string): Question[] => {
     "Evaluate the statement: '{topic} is the cornerstone of administrative efficiency in the Indian context.'"
   ];
 
-  // Limited to 10 as per user request
+  // Strictly limited to 10
   return Array.from({ length: 10 }).map((_, i) => {
     const seed = seeds[i % seeds.length];
     const questionText = seed.replace(/{topic}/g, topicName) + ` (Variant ${i + 1})`;
@@ -47,7 +47,7 @@ export const getGenericFallback = (topicName: string): Question[] => {
         `Option D: None of the above.`
       ],
       correctAnswer: (i * 3 + 1) % 4,
-      explanation: `UPSC VAULT EXPLANATION: This conceptual problem on ${topicName} targets the analytical ability required for the CDS exam. It focuses on the ${i % 2 === 0 ? 'historical' : 'theoretical'} foundations and current applications of the subject matter.`
+      explanation: `UPSC VAULT EXPLANATION: This conceptual problem on ${topicName} targets the analytical ability required for the CDS exam. It focuses on the historical and theoretical foundations.`
     };
   });
 };

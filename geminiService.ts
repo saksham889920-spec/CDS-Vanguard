@@ -3,28 +3,27 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { Question, SectionType, ConceptBrief } from "./types.ts";
 import { FALLBACK_QUESTIONS, getGenericFallback } from "./fallbackData.ts";
 
-// Initialize GenAI client strictly using the environment variable named parameter
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
 export const generateQuestions = async (
   section: SectionType,
   subjectName: string,
   topicId: string,
   topicName: string
 ): Promise<Question[]> => {
-  // Switch to gemini-3-flash-preview for significantly faster performance and higher reliability
+  // Initialize instance inside the call to ensure fresh access to injected env vars
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const model = "gemini-3-flash-preview";
   
   const systemInstruction = `
     You are an expert UPSC (CDS) Exam Content Strategist. 
-    Generate 10 high-quality, conceptual MCQs for the Combined Defence Services exam. 
+    Generate exactly 10 high-quality, conceptual MCQs for the Combined Defence Services exam. 
     
     STRICT RULES:
     1. MATCH CDS DIFFICULTY: Questions must be analytical and application-based.
     2. SUBJECT CONTEXT: For ${section}, focus on ${subjectName} core concepts.
     3. TOPIC: Strictly about ${topicName}.
-    4. VARIETY: Use a mix of direct conceptual questions and statement-based questions (Statement I and Statement II).
+    4. VARIETY: Use a mix of direct conceptual questions and statement-based questions.
     5. No repetitive or low-level questions.
+    6. Return valid JSON.
   `;
 
   const prompt = `Generate exactly 10 unique MCQs for CDS: ${section} -> ${subjectName} -> ${topicName}. 
@@ -55,22 +54,24 @@ export const generateQuestions = async (
       }
     });
 
-    const text = response.text;
+    let text = response.text || "";
+    // Clean any accidental markdown code blocks
+    text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+    
     if (!text) throw new Error("Empty AI response");
     
     const parsed = JSON.parse(text) as Question[];
-    // Ensure we only return 10 even if AI returns more
     return parsed.slice(0, 10);
   } catch (error) {
-    console.error("Gemini API Error:", error);
+    console.error("Gemini API Error - Reverting to Vault:", error);
     const specific = FALLBACK_QUESTIONS[topicId];
     if (specific && specific.length >= 10) return specific.slice(0, 10);
-    // Generic fallback is now also 10 questions
     return getGenericFallback(topicName);
   }
 };
 
 export const getDetailedConceptBrief = async (question: string, topic: string): Promise<ConceptBrief> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const model = "gemini-3-flash-preview";
   const prompt = `Provide a structured UPSC study brief for a CDS candidate on the specific concept used in this question: "${question}" within the broader topic of "${topic}".`;
 
@@ -94,7 +95,8 @@ export const getDetailedConceptBrief = async (question: string, topic: string): 
       }
     });
     
-    const text = response.text;
+    let text = response.text || "";
+    text = text.replace(/```json/g, '').replace(/```/g, '').trim();
     if (!text) throw new Error("Empty response");
     return JSON.parse(text) as ConceptBrief;
   } catch (error) {
@@ -103,7 +105,7 @@ export const getDetailedConceptBrief = async (question: string, topic: string): 
       corePrinciple: "The fundamental logic involves analyzing the structural relationship between the given elements.",
       upscContext: "UPSC focuses on application-based questions for this module.",
       strategicApproach: ["Analyze the given statements carefully.", "Eliminate logically impossible options first.", "Cross-reference with foundational NCERT concepts."],
-      recallHacks: "Think of this as the building block for advanced modules in this subject."
+      recallHacks: "Focus on the timeline of events for this specific topic."
     };
   }
 };
