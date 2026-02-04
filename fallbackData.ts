@@ -15,7 +15,7 @@ export const FALLBACK_QUESTIONS: Record<string, Question[]> = {
 };
 
 /**
- * Procedurally generates 50 unique questions for ANY topic to handle API limits 
+ * Procedurally generates 10 unique questions for ANY topic to handle API limits 
  * without requiring a heavy external database.
  */
 export const getGenericFallback = (topicName: string): Question[] => {
@@ -32,7 +32,8 @@ export const getGenericFallback = (topicName: string): Question[] => {
     "Evaluate the statement: '{topic} is the cornerstone of administrative efficiency in the Indian context.'"
   ];
 
-  return Array.from({ length: 50 }).map((_, i) => {
+  // Limited to 10 as per user request
+  return Array.from({ length: 10 }).map((_, i) => {
     const seed = seeds[i % seeds.length];
     const questionText = seed.replace(/{topic}/g, topicName) + ` (Variant ${i + 1})`;
     

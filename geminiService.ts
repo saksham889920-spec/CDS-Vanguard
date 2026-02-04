@@ -12,23 +12,23 @@ export const generateQuestions = async (
   topicId: string,
   topicName: string
 ): Promise<Question[]> => {
-  // Use gemini-3-pro-preview for complex reasoning and academic content generation
-  const model = "gemini-3-pro-preview";
+  // Switch to gemini-3-flash-preview for significantly faster performance and higher reliability
+  const model = "gemini-3-flash-preview";
   
   const systemInstruction = `
     You are an expert UPSC (CDS) Exam Content Strategist. 
-    Generate 10 high-quality, conceptual MCQs. 
+    Generate 10 high-quality, conceptual MCQs for the Combined Defence Services exam. 
     
     STRICT RULES:
-    1. MATCH CDS DIFFICULTY: Questions must be analytical, not rote-learning based.
-    2. ENGLISH: For 'Ordering of Sentences', provide a starting sentence (S1), an ending sentence (S6), and four intermediate sentences (P, Q, R, S) to be arranged.
-    3. MATHS: Focus on 'Theorem-based' problems, properties of figures, and complex algebraic identities.
-    4. GK: Use 'Statement-based' questions.
-    5. No repetitive questions.
+    1. MATCH CDS DIFFICULTY: Questions must be analytical and application-based.
+    2. SUBJECT CONTEXT: For ${section}, focus on ${subjectName} core concepts.
+    3. TOPIC: Strictly about ${topicName}.
+    4. VARIETY: Use a mix of direct conceptual questions and statement-based questions (Statement I and Statement II).
+    5. No repetitive or low-level questions.
   `;
 
-  const prompt = `Generate 10 unique MCQs for CDS: ${section} -> ${subjectName} -> ${topicName}. 
-    Response must be a JSON array of objects with id, text, options (4), correctAnswer (0-3), and explanation.`;
+  const prompt = `Generate exactly 10 unique MCQs for CDS: ${section} -> ${subjectName} -> ${topicName}. 
+    Response must be a JSON array of 10 objects.`;
 
   try {
     const response = await ai.models.generateContent({
@@ -36,7 +36,7 @@ export const generateQuestions = async (
       contents: prompt,
       config: {
         systemInstruction,
-        temperature: 0.8,
+        temperature: 0.7,
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.ARRAY,
@@ -46,7 +46,7 @@ export const generateQuestions = async (
               id: { type: Type.STRING },
               text: { type: Type.STRING },
               options: { type: Type.ARRAY, items: { type: Type.STRING } },
-              correctAnswer: { type: Type.INTEGER },
+              correctAnswer: { type: Type.INTEGER, description: "Index 0-3" },
               explanation: { type: Type.STRING }
             },
             required: ["id", "text", "options", "correctAnswer", "explanation"]
@@ -58,19 +58,21 @@ export const generateQuestions = async (
     const text = response.text;
     if (!text) throw new Error("Empty AI response");
     
-    return JSON.parse(text) as Question[];
+    const parsed = JSON.parse(text) as Question[];
+    // Ensure we only return 10 even if AI returns more
+    return parsed.slice(0, 10);
   } catch (error) {
-    console.warn("API Error, using fallback data:", error);
+    console.error("Gemini API Error:", error);
     const specific = FALLBACK_QUESTIONS[topicId];
     if (specific && specific.length >= 10) return specific.slice(0, 10);
+    // Generic fallback is now also 10 questions
     return getGenericFallback(topicName);
   }
 };
 
 export const getDetailedConceptBrief = async (question: string, topic: string): Promise<ConceptBrief> => {
-  // Use gemini-3-pro-preview for high-density strategic educational content
-  const model = "gemini-3-pro-preview";
-  const prompt = `Provide a structured study brief for a CDS candidate on: "${question}" within the topic "${topic}".`;
+  const model = "gemini-3-flash-preview";
+  const prompt = `Provide a structured UPSC study brief for a CDS candidate on the specific concept used in this question: "${question}" within the broader topic of "${topic}".`;
 
   try {
     const response = await ai.models.generateContent({
@@ -82,14 +84,10 @@ export const getDetailedConceptBrief = async (question: string, topic: string): 
         responseSchema: {
           type: Type.OBJECT,
           properties: {
-            corePrinciple: { type: Type.STRING, description: "Detailed yet concise explanation of the concept's logic." },
-            upscContext: { type: Type.STRING, description: "Why this matters for CDS and recent trends." },
-            strategicApproach: { 
-              type: Type.ARRAY, 
-              items: { type: Type.STRING }, 
-              description: "3-4 actionable steps or tricks to solve similar problems." 
-            },
-            recallHacks: { type: Type.STRING, description: "Any mnemonics, simple analogies, or memory hooks." }
+            corePrinciple: { type: Type.STRING },
+            upscContext: { type: Type.STRING },
+            strategicApproach: { type: Type.ARRAY, items: { type: Type.STRING } },
+            recallHacks: { type: Type.STRING }
           },
           required: ["corePrinciple", "upscContext", "strategicApproach", "recallHacks"]
         }
@@ -98,9 +96,9 @@ export const getDetailedConceptBrief = async (question: string, topic: string): 
     
     const text = response.text;
     if (!text) throw new Error("Empty response");
-    
     return JSON.parse(text) as ConceptBrief;
   } catch (error) {
+    console.error("Brief API Error:", error);
     return {
       corePrinciple: "The fundamental logic involves analyzing the structural relationship between the given elements.",
       upscContext: "UPSC focuses on application-based questions for this module.",
