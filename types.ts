@@ -29,10 +29,18 @@ export interface Category {
 export interface Subject {
   id: string;
   name: string;
+  // Added missing section property to Subject interface to match usage in constants.ts and App.tsx
   section: SectionType;
   icon: string;
   categories?: Category[];
   topics?: Topic[];
+}
+
+export interface ConceptBrief {
+  corePrinciple: string;
+  upscContext: string;
+  strategicApproach: string[];
+  recallHacks: string;
 }
 
 export interface Question {
@@ -41,17 +49,11 @@ export interface Question {
   options: string[];
   correctAnswer: number;
   explanation: string;
+  intelBrief?: ConceptBrief; // Now bundled for speed
 }
 
 export interface UserResponse {
   questionId: string;
   selectedOption: number | null;
   isCorrect: boolean;
-}
-
-export interface ConceptBrief {
-  corePrinciple: string;
-  upscContext: string;
-  strategicApproach: string[];
-  recallHacks: string;
 }

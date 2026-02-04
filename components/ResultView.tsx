@@ -1,7 +1,6 @@
 
 import React, { useState } from 'react';
-import { Question, UserResponse, Subject, Topic, ConceptBrief } from '../types';
-import { getDetailedConceptBrief } from '../geminiService';
+import { Question, UserResponse, Subject, Topic } from '../types';
 
 interface ResultViewProps {
   questions: Question[];
@@ -12,22 +11,15 @@ interface ResultViewProps {
 }
 
 const ResultView: React.FC<ResultViewProps> = ({ questions, responses, subject, topic, onRestart }) => {
-  const [deepDives, setDeepDives] = useState<Record<string, { content: ConceptBrief | null; loading: boolean }>>({});
+  // Use local state to track which briefs are "revealed" visually, but data is already there.
+  const [revealedBriefs, setRevealedBriefs] = useState<Record<string, boolean>>({});
 
   const correctCount = responses.filter(r => r.isCorrect).length;
   const attemptedCount = responses.filter(r => r.selectedOption !== null).length;
   const score = (correctCount * 1) - ((attemptedCount - correctCount) * 0.33);
 
-  const handleDeepDive = async (qId: string, qText: string) => {
-    if (deepDives[qId]) return;
-
-    setDeepDives(prev => ({ ...prev, [qId]: { content: null, loading: true } }));
-    try {
-      const brief = await getDetailedConceptBrief(qText, topic.name);
-      setDeepDives(prev => ({ ...prev, [qId]: { content: brief, loading: false } }));
-    } catch (error) {
-      setDeepDives(prev => ({ ...prev, [qId]: { content: null, loading: false } }));
-    }
+  const toggleBrief = (qId: string) => {
+    setRevealedBriefs(prev => ({ ...prev, [qId]: !prev[qId] }));
   };
 
   return (
@@ -67,7 +59,7 @@ const ResultView: React.FC<ResultViewProps> = ({ questions, responses, subject, 
 
       <div className="mb-8 border-b border-slate-200 pb-4">
         <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">CONCEPTUAL ANALYSIS</h3>
-        <p className="text-slate-500 text-sm font-medium">Review errors and expand your understanding of core UPSC concepts.</p>
+        <p className="text-slate-500 text-sm font-medium">Intel briefs generated instantly via Vanguard Batch Processing.</p>
       </div>
 
       <div className="space-y-10">
@@ -75,7 +67,8 @@ const ResultView: React.FC<ResultViewProps> = ({ questions, responses, subject, 
           const userResp = responses.find(r => r.questionId === q.id);
           const isCorrect = userResp?.isCorrect;
           const userIdx = userResp?.selectedOption;
-          const dive = deepDives[q.id];
+          const isBriefVisible = revealedBriefs[q.id];
+          const brief = q.intelBrief;
 
           return (
             <div key={q.id} className="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm transition-all hover:shadow-lg">
@@ -122,87 +115,69 @@ const ResultView: React.FC<ResultViewProps> = ({ questions, responses, subject, 
                   </p>
                 </div>
 
-                {/* Deep Dive Feature */}
-                {dive ? (
+                {/* Instant reveal brief */}
+                {isBriefVisible && brief ? (
                   <div className="animate-fade-in space-y-6">
-                    {dive.loading ? (
-                      <div className="bg-indigo-50/50 rounded-[2rem] p-10 border border-indigo-100 flex flex-col items-center justify-center text-center">
-                        <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
-                        <span className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400">Deploying Intel Brief...</span>
+                    <div className="grid grid-cols-1 gap-6">
+                      {/* Core Intelligence Card */}
+                      <div className="bg-slate-900 text-white rounded-[2rem] p-10 shadow-2xl relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-8 opacity-10 text-8xl">📑</div>
+                        <div className="flex items-center space-x-4 mb-6 relative z-10">
+                          <span className="text-3xl">🏛️</span>
+                          <h5 className="text-[11px] font-black uppercase tracking-[0.4em] text-indigo-400">The Conceptual Blueprint</h5>
+                        </div>
+                        <p className="text-slate-200 text-base leading-relaxed mb-8 font-medium relative z-10">
+                          {brief.corePrinciple}
+                        </p>
+                        <div className="pt-8 border-t border-white/10 relative z-10">
+                          <h6 className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-3">UPSC Trend Context</h6>
+                          <p className="text-sm text-indigo-200/80 leading-relaxed italic">{brief.upscContext}</p>
+                        </div>
                       </div>
-                    ) : dive.content && (
-                      <div className="grid grid-cols-1 gap-6">
-                        {/* Core Intelligence Card */}
-                        <div className="bg-slate-900 text-white rounded-[2rem] p-10 shadow-2xl relative overflow-hidden">
-                          <div className="absolute top-0 right-0 p-8 opacity-10 text-8xl">📑</div>
-                          <div className="flex items-center space-x-4 mb-6 relative z-10">
-                            <span className="text-3xl">🏛️</span>
-                            <h5 className="text-[11px] font-black uppercase tracking-[0.4em] text-indigo-400">The Conceptual Blueprint</h5>
+
+                      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                        <div className="lg:col-span-7 bg-white rounded-[2.5rem] p-10 border-2 border-slate-100 shadow-sm">
+                          <div className="flex items-center space-x-4 mb-8">
+                            <span className="text-3xl">⚔️</span>
+                            <h5 className="text-[11px] font-black uppercase tracking-[0.4em] text-slate-900">The Vanguard Approach</h5>
                           </div>
-                          <p className="text-slate-200 text-base leading-relaxed mb-8 font-medium relative z-10">
-                            {dive.content.corePrinciple}
-                          </p>
-                          <div className="pt-8 border-t border-white/10 relative z-10">
-                            <h6 className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-3">UPSC Trend Context</h6>
-                            <p className="text-sm text-indigo-200/80 leading-relaxed italic">{dive.content.upscContext}</p>
+                          <div className="space-y-6">
+                            {brief.strategicApproach.map((step, sIdx) => (
+                              <div key={sIdx} className="flex items-start space-x-4">
+                                <span className="w-6 h-6 flex items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 text-[10px] font-black shrink-0">{sIdx + 1}</span>
+                                <p className="text-slate-700 text-sm font-bold leading-relaxed">{step}</p>
+                              </div>
+                            ))}
                           </div>
                         </div>
 
-                        {/* Strategy & Hacks Grid */}
-                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                          {/* Learning Approach */}
-                          <div className="lg:col-span-7 bg-white rounded-[2.5rem] p-10 border-2 border-slate-100 shadow-sm">
-                            <div className="flex items-center space-x-4 mb-8">
-                              <span className="text-3xl">⚔️</span>
-                              <h5 className="text-[11px] font-black uppercase tracking-[0.4em] text-slate-900">The Vanguard Approach</h5>
-                            </div>
-                            <div className="space-y-6">
-                              {dive.content.strategicApproach.map((step, sIdx) => (
-                                <div key={sIdx} className="flex items-start space-x-4">
-                                  <span className="w-6 h-6 flex items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 text-[10px] font-black shrink-0">{sIdx + 1}</span>
-                                  <p className="text-slate-700 text-sm font-bold leading-relaxed">{step}</p>
-                                </div>
-                              ))}
-                            </div>
-                            <div className="mt-10 p-5 bg-indigo-50 rounded-2xl border border-indigo-100">
-                               <p className="text-[10px] font-black text-indigo-700 uppercase tracking-widest mb-1">Combat Tip</p>
-                               <p className="text-xs text-indigo-900 font-medium">Focus on eliminating the extremes in statement-based questions for this topic.</p>
-                            </div>
-                          </div>
-
-                          {/* Quick Recall & Pitfalls */}
-                          <div className="lg:col-span-5 flex flex-col gap-6">
-                             <div className="bg-amber-50 rounded-[2.5rem] p-10 border-2 border-amber-100/50 flex-grow shadow-inner">
-                                <div className="flex items-center space-x-4 mb-6">
-                                  <span className="text-3xl">💡</span>
-                                  <h5 className="text-[11px] font-black uppercase tracking-[0.4em] text-amber-700">Memory Hack</h5>
-                                </div>
-                                <p className="text-amber-900 text-base font-black italic leading-relaxed">
-                                  "{dive.content.recallHacks}"
-                                </p>
-                             </div>
-                             
-                             <div className="bg-red-50 rounded-[2.5rem] p-10 border-2 border-red-100/50 shadow-inner">
-                                <div className="flex items-center space-x-4 mb-6">
-                                  <span className="text-3xl">🕳️</span>
-                                  <h5 className="text-[11px] font-black uppercase tracking-[0.4em] text-red-700">Exam Pitfalls</h5>
-                                </div>
-                                <p className="text-red-900 text-xs font-bold leading-relaxed">
-                                  Candidates often confuse these elements with similar concepts from adjacent modules. Always verify the chronology.
-                                </p>
-                             </div>
-                          </div>
+                        <div className="lg:col-span-5 flex flex-col gap-6">
+                           <div className="bg-amber-50 rounded-[2.5rem] p-10 border-2 border-amber-100/50 flex-grow shadow-inner">
+                              <div className="flex items-center space-x-4 mb-6">
+                                <span className="text-3xl">💡</span>
+                                <h5 className="text-[11px] font-black uppercase tracking-[0.4em] text-amber-700">Memory Hack</h5>
+                              </div>
+                              <p className="text-amber-900 text-base font-black italic leading-relaxed">
+                                "{brief.recallHacks}"
+                              </p>
+                           </div>
                         </div>
                       </div>
-                    )}
+                    </div>
+                    <button 
+                      onClick={() => toggleBrief(q.id)}
+                      className="w-full py-4 text-slate-400 text-[10px] font-black uppercase tracking-widest hover:text-slate-600 transition-colors"
+                    >
+                      Collapse Intel Brief
+                    </button>
                   </div>
                 ) : (
                   <button 
-                    onClick={() => handleDeepDive(q.id, q.text)}
+                    onClick={() => toggleBrief(q.id)}
                     className="w-full py-8 bg-white border-2 border-dashed border-slate-200 rounded-[2.5rem] text-slate-400 text-[11px] font-black uppercase tracking-[0.5em] hover:border-indigo-500 hover:text-indigo-600 hover:bg-indigo-50/20 transition-all flex flex-col items-center justify-center group"
                   >
                     <span className="group-hover:scale-125 group-hover:-rotate-12 transition-transform mb-3 text-4xl">🛡️</span>
-                    ENGAGE MISSION INTEL BRIEF
+                    OPEN MISSION INTEL BRIEF (INSTANT)
                   </button>
                 )}
               </div>

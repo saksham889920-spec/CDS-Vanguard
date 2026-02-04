@@ -9,25 +9,25 @@ export const generateQuestions = async (
   topicId: string,
   topicName: string
 ): Promise<Question[]> => {
-  // Initialize instance inside the call to ensure fresh access to injected env vars
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const model = "gemini-3-flash-preview";
   
   const systemInstruction = `
     You are an expert UPSC (CDS) Exam Content Strategist. 
-    Generate exactly 10 high-quality, conceptual MCQs for the Combined Defence Services exam. 
+    Generate exactly 10 high-quality, conceptual MCQs and their corresponding detailed Intel Briefs.
     
     STRICT RULES:
     1. MATCH CDS DIFFICULTY: Questions must be analytical and application-based.
     2. SUBJECT CONTEXT: For ${section}, focus on ${subjectName} core concepts.
     3. TOPIC: Strictly about ${topicName}.
-    4. VARIETY: Use a mix of direct conceptual questions and statement-based questions.
-    5. No repetitive or low-level questions.
-    6. Return valid JSON.
+    4. BUNDLED INTEL: Each question MUST include an 'intelBrief' object containing:
+       - corePrinciple: The fundamental logic/concept.
+       - upscContext: Why this matters in the current CDS trend.
+       - strategicApproach: 3-step battle plan to solve such questions.
+       - recallHacks: A memory trick or shorthand.
   `;
 
-  const prompt = `Generate exactly 10 unique MCQs for CDS: ${section} -> ${subjectName} -> ${topicName}. 
-    Response must be a JSON array of 10 objects.`;
+  const prompt = `Generate exactly 10 unique MCQs and Intel Briefs for CDS: ${section} -> ${subjectName} -> ${topicName}. Return a JSON array.`;
 
   try {
     const response = await ai.models.generateContent({
@@ -35,7 +35,7 @@ export const generateQuestions = async (
       contents: prompt,
       config: {
         systemInstruction,
-        temperature: 0.7,
+        temperature: 0.6, // Optimized for speed and deterministic output
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.ARRAY,
@@ -45,17 +45,26 @@ export const generateQuestions = async (
               id: { type: Type.STRING },
               text: { type: Type.STRING },
               options: { type: Type.ARRAY, items: { type: Type.STRING } },
-              correctAnswer: { type: Type.INTEGER, description: "Index 0-3" },
-              explanation: { type: Type.STRING }
+              correctAnswer: { type: Type.INTEGER },
+              explanation: { type: Type.STRING },
+              intelBrief: {
+                type: Type.OBJECT,
+                properties: {
+                  corePrinciple: { type: Type.STRING },
+                  upscContext: { type: Type.STRING },
+                  strategicApproach: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  recallHacks: { type: Type.STRING }
+                },
+                required: ["corePrinciple", "upscContext", "strategicApproach", "recallHacks"]
+              }
             },
-            required: ["id", "text", "options", "correctAnswer", "explanation"]
+            required: ["id", "text", "options", "correctAnswer", "explanation", "intelBrief"]
           }
         }
       }
     });
 
     let text = response.text || "";
-    // Clean any accidental markdown code blocks
     text = text.replace(/```json/g, '').replace(/```/g, '').trim();
     
     if (!text) throw new Error("Empty AI response");
@@ -63,49 +72,19 @@ export const generateQuestions = async (
     const parsed = JSON.parse(text) as Question[];
     return parsed.slice(0, 10);
   } catch (error) {
-    console.error("Gemini API Error - Reverting to Vault:", error);
+    console.error("Gemini API Error:", error);
     const specific = FALLBACK_QUESTIONS[topicId];
     if (specific && specific.length >= 10) return specific.slice(0, 10);
     return getGenericFallback(topicName);
   }
 };
 
+// This is now legacy/unused as data is pre-fetched, but kept for interface safety
 export const getDetailedConceptBrief = async (question: string, topic: string): Promise<ConceptBrief> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const model = "gemini-3-flash-preview";
-  const prompt = `Provide a structured UPSC study brief for a CDS candidate on the specific concept used in this question: "${question}" within the broader topic of "${topic}".`;
-
-  try {
-    const response = await ai.models.generateContent({
-      model,
-      contents: prompt,
-      config: {
-        systemInstruction: "You are a senior UPSC mentor. Deliver high-density, strategic concepts in JSON format.",
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            corePrinciple: { type: Type.STRING },
-            upscContext: { type: Type.STRING },
-            strategicApproach: { type: Type.ARRAY, items: { type: Type.STRING } },
-            recallHacks: { type: Type.STRING }
-          },
-          required: ["corePrinciple", "upscContext", "strategicApproach", "recallHacks"]
-        }
-      }
-    });
-    
-    let text = response.text || "";
-    text = text.replace(/```json/g, '').replace(/```/g, '').trim();
-    if (!text) throw new Error("Empty response");
-    return JSON.parse(text) as ConceptBrief;
-  } catch (error) {
-    console.error("Brief API Error:", error);
-    return {
-      corePrinciple: "The fundamental logic involves analyzing the structural relationship between the given elements.",
-      upscContext: "UPSC focuses on application-based questions for this module.",
-      strategicApproach: ["Analyze the given statements carefully.", "Eliminate logically impossible options first.", "Cross-reference with foundational NCERT concepts."],
-      recallHacks: "Focus on the timeline of events for this specific topic."
-    };
-  }
+  return {
+    corePrinciple: "The primary concept involves standard UPSC analytical frameworks.",
+    upscContext: "Frequent in CDS Paper 2.",
+    strategicApproach: ["Analyze basics.", "Eliminate options.", "Select best fit."],
+    recallHacks: "UPSC focuses on precision here."
+  };
 };
