@@ -1,8 +1,8 @@
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { SYLLABUS } from './constants.ts';
 import { Subject, Topic, Question, UserResponse, SectionType, Category } from './types.ts';
-import { generateQuestions } from './geminiService.ts';
+import { generateQuestions, fetchSolutionKey } from './geminiService.ts';
 import TestEngine from './components/TestEngine.tsx';
 import ResultView from './components/ResultView.tsx';
 
@@ -15,6 +15,7 @@ const App: React.FC = () => {
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [responses, setResponses] = useState<UserResponse[]>([]);
+  const [isKeyLoading, setIsKeyLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const englishSubject = useMemo(() => SYLLABUS.find(s => s.id === 'english'), []);
@@ -25,10 +26,23 @@ const App: React.FC = () => {
     setState('LOADING');
     setError(null);
     try {
+      // Pass 1: Questions and Options only (FAST)
       const generated = await generateQuestions(subject.section, subject.name, topic.id, topic.name);
       setQuestions(generated);
       setSelectedTopic(topic);
       setState('EXAM');
+
+      // Pass 2: Background Solutions (Silent Dispatch)
+      setIsKeyLoading(true);
+      fetchSolutionKey(generated).then(keyMap => {
+        setQuestions(prev => prev.map(q => ({
+          ...q,
+          correctAnswer: keyMap[q.id]?.correctAnswer ?? 0,
+          explanation: keyMap[q.id]?.explanation ?? "UPSC analysis verification pending."
+        })));
+        setIsKeyLoading(false);
+      }).catch(() => setIsKeyLoading(false));
+
     } catch (err) {
       setError("Vault fallback activated.");
       setState('ERROR');
@@ -169,13 +183,13 @@ const App: React.FC = () => {
   };
 
   const renderLoading = () => (
-    <div className="flex flex-col items-center justify-center min-h-[70vh] p-8 text-center animate-pulse">
-      <div className="relative">
-        <div className="w-20 h-20 border-[6px] border-slate-100 border-t-slate-900 rounded-full animate-spin mb-10"></div>
+    <div className="flex flex-col items-center justify-center min-h-[70vh] p-8 text-center">
+      <div className="relative mb-10">
+        <div className="w-20 h-20 border-[6px] border-slate-100 border-t-slate-900 rounded-full animate-spin"></div>
         <div className="absolute top-0 left-0 w-20 h-20 flex items-center justify-center text-[10px] font-black text-slate-900">INTEL</div>
       </div>
       <h2 className="text-2xl font-black text-slate-900 uppercase tracking-[0.5em] mb-2">Assembling Vault</h2>
-      <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">Constructing conceptual simulation for {selectedTopic?.name}</p>
+      <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">Deploying conceptual simulation in &lt; 8 seconds...</p>
     </div>
   );
 
@@ -217,7 +231,13 @@ const App: React.FC = () => {
         {state === 'LOADING' && renderLoading()}
         {state === 'ERROR' && renderError()}
         {state === 'EXAM' && selectedSubject && selectedTopic && (
-          <TestEngine questions={questions} subject={selectedSubject} topic={selectedTopic} onFinish={handleFinishTest} />
+          <TestEngine 
+            questions={questions} 
+            subject={selectedSubject} 
+            topic={selectedTopic} 
+            isKeyLoading={isKeyLoading}
+            onFinish={handleFinishTest} 
+          />
         )}
         {state === 'RESULTS' && selectedSubject && selectedTopic && (
           <ResultView 
@@ -231,7 +251,7 @@ const App: React.FC = () => {
       </main>
       
       <footer className="py-20 border-t border-slate-100 text-center bg-slate-50/50">
-        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.5em]">CDS VANGUARD • Strategic UPSC Engine • v3.0</p>
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.5em]">CDS VANGUARD • Strategic UPSC Engine • v3.1 (Ghost Key Pipeline)</p>
       </footer>
     </div>
   );

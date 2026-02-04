@@ -7,13 +7,6 @@ export enum SectionType {
 
 export type MasteryStatus = 'LOCKED' | 'NEEDS_REVIEW' | 'PRACTICING' | 'MASTERED';
 
-export interface TopicProgress {
-  topicId: string;
-  bestScore: number;
-  attempts: number;
-  status: MasteryStatus;
-}
-
 export interface Topic {
   id: string;
   name: string;
@@ -38,7 +31,7 @@ export interface Subject {
 export interface ConceptBrief {
   corePrinciple: string;
   upscContext: string;
-  strategicApproach: string; // Simplified from array to string
+  strategicApproach: string;
   recallHacks: string;
 }
 
@@ -46,8 +39,8 @@ export interface Question {
   id: string;
   text: string;
   options: string[];
-  correctAnswer: number;
-  explanation: string;
+  correctAnswer?: number; // Optional until background key loads
+  explanation?: string;   // Optional until background key loads
   intelBrief?: ConceptBrief;
 }
 

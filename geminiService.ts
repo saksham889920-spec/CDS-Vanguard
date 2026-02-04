@@ -4,8 +4,8 @@ import { Question, SectionType, ConceptBrief } from "./types.ts";
 import { getGenericFallback } from "./fallbackData.ts";
 
 /**
- * GENERATE QUESTIONS: Now uses parallel batching for extreme speed.
- * Fires two concurrent requests for 5 questions each.
+ * PHASE 1: ULTRA-FAST START
+ * Generates only text and options to get the user into the test immediately.
  */
 export const generateQuestions = async (
   section: SectionType,
@@ -14,87 +14,105 @@ export const generateQuestions = async (
   topicName: string
 ): Promise<Question[]> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  // Using Flash Lite (2.5) for the absolute fastest response time
-  const model = "gemini-flash-lite-latest";
+  const model = "gemini-3-flash-preview";
   
-  const systemInstruction = `UPSC CDS Exam Data Engine. Task: Generate exactly 5 MCQs for ${section} - ${topicName}. Difficulty: Analytical. Format: JSON array.`;
-
-  const fetchBatch = async (batchId: number): Promise<Question[]> => {
-    try {
-      const response = await ai.models.generateContent({
-        model,
-        contents: `Generate 5 unique MCQs on ${topicName} for UPSC CDS. Batch ID: ${batchId}. Include: text, options (4), correctAnswer (0-3), and explanation.`,
-        config: {
-          systemInstruction,
-          temperature: 0.6,
-          // Thinking is not needed for pure MCQ data extraction, maximizing speed
-          thinkingConfig: { thinkingBudget: 0 },
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                id: { type: Type.STRING },
-                text: { type: Type.STRING },
-                options: { type: Type.ARRAY, items: { type: Type.STRING } },
-                correctAnswer: { type: Type.INTEGER },
-                explanation: { type: Type.STRING }
-              },
-              required: ["id", "text", "options", "correctAnswer", "explanation"]
-            }
-          }
-        }
-      });
-
-      const text = (response.text || "").replace(/```json|```/g, "").trim();
-      if (!text) return [];
-      const parsed = JSON.parse(text) as Question[];
-      // Ensure IDs are unique across batches
-      return parsed.map((q, idx) => ({ ...q, id: `q-${batchId}-${idx}-${Date.now()}` }));
-    } catch (error) {
-      console.error(`Batch ${batchId} failure:`, error);
-      return [];
-    }
-  };
+  const systemInstruction = `UPSC CDS Strategist. Rapidly generate 10 MCQs for ${topicName}. Return ONLY a JSON array of objects with 'id', 'text', and 'options' (array of 4). Minimize words to maximize speed. Difficulty: High.`;
 
   try {
-    // FIRE TWO REQUESTS IN PARALLEL (5 + 5 = 10 questions)
-    // This effectively halves the latency of the generation process
-    const [batch1, batch2] = await Promise.all([
-      fetchBatch(1),
-      fetchBatch(2)
-    ]);
+    const response = await ai.models.generateContent({
+      model,
+      contents: `Generate 10 ${topicName} MCQs for CDS. JSON format.`,
+      config: {
+        systemInstruction,
+        temperature: 0.7,
+        thinkingConfig: { thinkingBudget: 0 },
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              id: { type: Type.STRING },
+              text: { type: Type.STRING },
+              options: { type: Type.ARRAY, items: { type: Type.STRING } }
+            },
+            required: ["id", "text", "options"]
+          }
+        }
+      }
+    });
 
-    const combined = [...batch1, ...batch2];
-    
-    // Fallback if the API returned partial results
-    if (combined.length < 5) {
-      throw new Error("Insufficient questions generated");
-    }
-
-    return combined;
+    const text = (response.text || "").replace(/```json|```/g, "").trim();
+    if (!text) throw new Error("Empty Response");
+    return JSON.parse(text) as Question[];
   } catch (error) {
-    console.error("Parallel Generation Failure:", error);
+    console.error("MCQ Sprint Failed:", error);
     return getGenericFallback(topicName);
   }
 };
 
 /**
- * GET DETAILED CONCEPT BRIEF: On-demand retrieval for a specific question.
+ * PHASE 2: SILENT DISPATCH
+ * Fetches answers and explanations for the specific questions generated in Phase 1.
+ */
+export const fetchSolutionKey = async (questions: Question[]): Promise<Record<string, { correctAnswer: number; explanation: string }>> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const model = "gemini-3-flash-preview";
+
+  const prompt = `For these 10 UPSC questions, provide the correct answer index (0-3) and a professional UPSC-style explanation.
+  Questions: ${JSON.stringify(questions.map(q => ({ id: q.id, text: q.text })))}`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model,
+      contents: prompt,
+      config: {
+        systemInstruction: "You are the UPSC Chief Examiner. Provide precise answer indices and high-quality educational explanations. Return JSON.",
+        temperature: 0.4,
+        thinkingConfig: { thinkingBudget: 0 },
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              id: { type: Type.STRING },
+              correctAnswer: { type: Type.INTEGER },
+              explanation: { type: Type.STRING }
+            },
+            required: ["id", "correctAnswer", "explanation"]
+          }
+        }
+      }
+    });
+
+    const text = (response.text || "").replace(/```json|```/g, "").trim();
+    const data = JSON.parse(text) as Array<{ id: string; correctAnswer: number; explanation: string }>;
+    
+    const keyMap: Record<string, { correctAnswer: number; explanation: string }> = {};
+    data.forEach(item => {
+      keyMap[item.id] = { correctAnswer: item.correctAnswer, explanation: item.explanation };
+    });
+    return keyMap;
+  } catch (error) {
+    console.error("Solution Key Background Fetch Failed:", error);
+    return {};
+  }
+};
+
+/**
+ * PHASE 3: HIGH-QUALITY ON-DEMAND INTEL
  */
 export const getDetailedConceptBrief = async (questionText: string, topicName: string): Promise<ConceptBrief> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const model = "gemini-flash-lite-latest"; // Also using lite for on-demand info
-
-  const prompt = `Tactical UPSC Brief for: "${questionText}" in "${topicName}".`;
+  const model = "gemini-3-flash-preview";
 
   const response = await ai.models.generateContent({
     model,
-    contents: prompt,
+    contents: `Detailed UPSC Analysis for: "${questionText}" in "${topicName}".`,
     config: {
-      systemInstruction: "You are a UPSC Strategist. Return a JSON Intel Brief with: corePrinciple, upscContext, strategicApproach (concise tactics), and recallHacks (short mnemonic).",
-      temperature: 0.4,
+      systemInstruction: "Expert UPSC Strategist. Return JSON: corePrinciple, upscContext, strategicApproach, recallHacks.",
+      temperature: 0.5,
       thinkingConfig: { thinkingBudget: 0 },
       responseMimeType: "application/json",
       responseSchema: {
@@ -110,6 +128,5 @@ export const getDetailedConceptBrief = async (questionText: string, topicName: s
     }
   });
 
-  const text = (response.text || "").replace(/```json|```/g, "").trim();
-  return JSON.parse(text) as ConceptBrief;
+  return JSON.parse(response.text.trim()) as ConceptBrief;
 };
