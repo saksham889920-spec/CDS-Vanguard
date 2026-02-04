@@ -97,37 +97,45 @@ export const SYLLABUS: Subject[] = [
         id: 'ancient-history',
         name: 'Ancient History',
         topics: [
-          { id: 'ivc', name: 'Indus Valley Civilization', description: 'Urban planning and Harappan culture' },
-          { id: 'vedic-age', name: 'Vedic Age', description: 'Society, religion, and the Vedas' },
-          { id: 'religious-movements', name: 'Buddhism & Jainism', description: 'Teachings and Councils' },
-          { id: 'mauryan-gupta', name: 'Mauryan & Gupta Empires', description: 'Administration and Golden Age' }
+          { id: 'ancient-prehistoric', name: 'Pre-historic & Indus Valley', description: 'Stone Age, Harappan sites & culture' },
+          { id: 'ancient-vedic', name: 'Vedic Age & Mahajanapadas', description: 'Vedas, Society, 16 Mahajanapadas' },
+          { id: 'ancient-religions', name: 'Buddhism & Jainism', description: 'Teachings, Councils, Sects' },
+          { id: 'ancient-mauryan', name: 'Mauryan & Post-Mauryan', description: 'Ashoka, Administration, Kanishka, Satavahanas' },
+          { id: 'ancient-gupta', name: 'Gupta & Post-Gupta Era', description: 'Golden Age, Harsha, Administration' },
+          { id: 'ancient-south', name: 'Sangam Age & South India', description: 'Cholas, Cheras, Pandyas, Literature' }
         ]
       },
       {
         id: 'medieval-history',
         name: 'Medieval History',
         topics: [
-          { id: 'delhi-sultanate', name: 'Delhi Sultanate', description: 'Slave to Lodi dynasties' },
-          { id: 'mughal-empire', name: 'Mughal Empire', description: 'Administration, Art, and Architecture' },
-          { id: 'vijayanagara', name: 'Vijayanagara Empire', description: 'South Indian Polity' }
+          { id: 'med-early', name: 'Early Medieval India', description: 'Tripartite Struggle, Rajputs, Imperial Cholas' },
+          { id: 'med-sultanate', name: 'Delhi Sultanate', description: 'Slave, Khilji, Tughlaq, Lodi dynasties' },
+          { id: 'med-vijayanagara', name: 'Vijayanagara & Bahmani', description: 'Administration, Art, Architecture' },
+          { id: 'med-mughal', name: 'Mughal Empire', description: 'Babur to Aurangzeb, Administration, Mansabdari' },
+          { id: 'med-culture', name: 'Bhakti & Sufi Movements', description: 'Saints, Philosophy, Literature' },
+          { id: 'med-maratha', name: 'Maratha Confederacy', description: 'Shivaji, Peshwas, Administration' }
         ]
       },
       {
         id: 'modern-history',
-        name: 'Modern History',
+        name: 'Modern History (1757-1947)',
         topics: [
-          { id: 'advent-europeans', name: 'Advent of Europeans', description: 'Portuguese, British, French' },
-          { id: 'revolt-1857', name: 'Revolt of 1857', description: 'Causes and Consequences' },
-          { id: 'socio-religious', name: 'Socio-Religious Reforms', description: 'Raja Ram Mohan Roy, etc.' }
+          { id: 'mod-british-exp', name: 'Advent of Europeans & Expansion', description: 'Carnatic Wars, Bengal, Mysore, Marathas' },
+          { id: 'mod-revolt-1857', name: 'Revolt of 1857 & Uprisings', description: 'Sepoy Mutiny, Peasant & Tribal movements' },
+          { id: 'mod-reform', name: 'Socio-Religious Reforms', description: 'Brahmo Samaj, Arya Samaj, Aligarh Movement' },
+          { id: 'mod-inc-phase', name: 'INC: Moderate & Extremist', description: 'Congress formation, Swadeshi, Surat Split' },
+          { id: 'mod-gandhi', name: 'Gandhian Era (1919-1939)', description: 'NCM, CDM, RTC, Peasants & Workers' },
+          { id: 'mod-freedom', name: 'Independence & Partition', description: 'Quit India, INA, Cabinet Mission, Mountbatten Plan' }
         ]
       },
       {
-        id: 'national-movement',
-        name: 'Indian National Movement',
+        id: 'art-culture',
+        name: 'Indian Art & Culture',
         topics: [
-          { id: 'inc-phase', name: 'INC Phases (Moderate/Extremist)', description: 'Congress ideology' },
-          { id: 'gandhian-era', name: 'Gandhian Era', description: 'NCM, CDM, Quit India' },
-          { id: 'independence-partition', name: 'Partition & Independence', description: 'Cabinet Mission, Mountbatten Plan' }
+          { id: 'art-arch', name: 'Visual Arts: Architecture', description: 'Temple styles (Nagara, Dravida), Caves, Indo-Islamic' },
+          { id: 'art-perform', name: 'Performing Arts', description: 'Classical Dances, Music (Hindustani/Carnatic)' },
+          { id: 'art-lit-paint', name: 'Literature & Painting', description: 'Mughal/Rajput paintings, Ancient texts' }
         ]
       }
     ]
@@ -194,13 +202,54 @@ export const SYLLABUS: Subject[] = [
     name: 'Indian Polity',
     section: SectionType.GK,
     icon: '⚖️',
-    topics: [
-      { id: 'constitution-preamble', name: 'Constitution & Preamble', description: 'Features and philosophy' },
-      { id: 'fr-dpsp-fd', name: 'FR, DPSP & Fundamental Duties', description: 'Rights and State Guidelines' },
-      { id: 'parliament', name: 'Parliament', description: 'Lok Sabha, Rajya Sabha, Procedures' },
-      { id: 'judiciary', name: 'Judiciary', description: 'Supreme Court & High Courts' },
-      { id: 'constitutional-bodies', name: 'Constitutional Bodies', description: 'UPSC, EC, CAG' },
-      { id: 'panchayati-raj', name: 'Panchayati Raj', description: 'Local Self Government' }
+    categories: [
+      {
+        id: 'polity-const',
+        name: 'Constitutional Framework',
+        topics: [
+          { id: 'pol-making', name: 'Making of Constitution', description: 'Constituent Assembly, Sources, Enactment' },
+          { id: 'pol-preamble', name: 'Preamble & Features', description: 'Sovereign, Socialist, Secular, Key Features' },
+          { id: 'pol-rights', name: 'Fundamental Rights (FR)', description: 'Articles 12-35, Writs, Suspensions' },
+          { id: 'pol-dpsp', name: 'DPSP & Fundamental Duties', description: 'State directives, Swaran Singh Committee' },
+          { id: 'pol-amend', name: 'Amendment of Constitution', description: 'Art 368, Basic Structure Doctrine' }
+        ]
+      },
+      {
+        id: 'polity-govt',
+        name: 'System of Government',
+        topics: [
+          { id: 'pol-parl-sys', name: 'Parliamentary & Federal System', description: 'Features, Unitary vs Federal bias' },
+          { id: 'pol-centre-state', name: 'Centre-State Relations', description: 'Legislative, Admin, Financial relations' },
+          { id: 'pol-emergency', name: 'Emergency Provisions', description: 'National, State, Financial Emergencies' }
+        ]
+      },
+      {
+        id: 'polity-union',
+        name: 'Union Executive & Legislature',
+        topics: [
+          { id: 'pol-president', name: 'President & Vice-President', description: 'Election, Powers, Veto, Ordinance' },
+          { id: 'pol-pm', name: 'PM & Council of Ministers', description: 'Role, Cabinet Committees, Responsibility' },
+          { id: 'pol-parliament', name: 'Parliament', description: 'Lok Sabha, Rajya Sabha, Bills, Budget, Motions' }
+        ]
+      },
+      {
+        id: 'polity-state',
+        name: 'State & Local Government',
+        topics: [
+          { id: 'pol-governor', name: 'Governor & CM', description: 'Powers, Discretion, State Council' },
+          { id: 'pol-state-leg', name: 'State Legislature', description: 'Vidhan Sabha, Vidhan Parishad' },
+          { id: 'pol-panchayat', name: 'Panchayati Raj & Municipalities', description: '73rd & 74th Amendments, PESA' }
+        ]
+      },
+      {
+        id: 'polity-bodies',
+        name: 'Judiciary & Bodies',
+        topics: [
+          { id: 'pol-sc-hc', name: 'Supreme Court & High Courts', description: 'Jurisdiction, Appointments, Removal' },
+          { id: 'pol-const-bodies', name: 'Constitutional Bodies', description: 'EC, UPSC, CAG, Finance Commission' },
+          { id: 'pol-non-const', name: 'Non-Constitutional Bodies', description: 'NITI Aayog, NHRC, CIC, Lokpal' }
+        ]
+      }
     ]
   },
   {
@@ -208,11 +257,50 @@ export const SYLLABUS: Subject[] = [
     name: 'Indian Economy',
     section: SectionType.GK,
     icon: '💹',
-    topics: [
-      { id: 'national-income', name: 'National Income & Inflation', description: 'GDP, CPI, WPI' },
-      { id: 'banking-monetary', name: 'Banking & Monetary Policy', description: 'RBI functions, Repo Rate' },
-      { id: 'budget-taxation', name: 'Budget & Fiscal Policy', description: 'Taxation, Deficits, GST' },
-      { id: 'poverty-unemployment', name: 'Poverty & Unemployment', description: 'Schemes and Indices' }
+    categories: [
+      {
+        id: 'eco-macro',
+        name: 'Macroeconomic Fundamentals',
+        topics: [
+          { id: 'eco-ni', name: 'National Income Accounting', description: 'GDP, GNP, NNP, Real vs Nominal' },
+          { id: 'eco-inflation', name: 'Inflation', description: 'CPI, WPI, Types, Causes, Impact' },
+          { id: 'eco-growth', name: 'Growth & Development', description: 'HDI, Sustainable Development, Happiness Index' }
+        ]
+      },
+      {
+        id: 'eco-banking',
+        name: 'Money & Banking',
+        topics: [
+          { id: 'eco-rbi', name: 'RBI & Monetary Policy', description: 'Repo, CRR, SLR, Functions of RBI' },
+          { id: 'eco-banks', name: 'Banking System', description: 'PSBs, NPA Crisis, Basel Norms, Financial Inclusion' },
+          { id: 'eco-markets', name: 'Financial Markets', description: 'Money Market, Capital Market (SEBI)' }
+        ]
+      },
+      {
+        id: 'eco-public',
+        name: 'Public Finance',
+        topics: [
+          { id: 'eco-fiscal', name: 'Fiscal Policy & Budget', description: 'Deficits, FRBM Act, Budget Components' },
+          { id: 'eco-tax', name: 'Taxation System', description: 'GST, Direct/Indirect Taxes, Tax Reforms' }
+        ]
+      },
+      {
+        id: 'eco-external',
+        name: 'External Sector',
+        topics: [
+          { id: 'eco-bop', name: 'Balance of Payments (BoP)', description: 'Current/Capital Account, Forex Reserves' },
+          { id: 'eco-orgs', name: 'International Organizations', description: 'IMF, World Bank, WTO, Trade Agreements' }
+        ]
+      },
+      {
+        id: 'eco-sectors',
+        name: 'Sectors & Schemes',
+        topics: [
+          { id: 'eco-agri', name: 'Agriculture', description: 'MSP, Green Revolution, Cropping Patterns' },
+          { id: 'eco-ind', name: 'Industry & Infrastructure', description: 'Industrial Policies, Core Industries, Logistics' },
+          { id: 'eco-schemes', name: 'Poverty & Govt Schemes', description: 'Employment, Poverty Line, Social Security' }
+        ]
+      }
     ]
   },
   {
