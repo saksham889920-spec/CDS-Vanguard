@@ -29,7 +29,7 @@ const getNextApiKey = (): string => {
   return key;
 };
 
-// Helper for delay
+// Helper for delay (minimal delay just to prevent browser network congestion)
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 /**
@@ -64,6 +64,7 @@ const generateBatch = async (
   count: number, 
   batchId: number
 ): Promise<Question[]> => {
+  // Rotate key for every batch request
   const apiKey = getNextApiKey();
   
   if (!apiKey) throw new Error("No API Key available");
@@ -77,13 +78,13 @@ const generateBatch = async (
   Schema: id (string), text (string), options (string[]), correctAnswer (0-3 int).
   Constraint: ${constraint}`;
 
-  // We lower the temperature slightly to ensure valid JSON structure
+  // Direct call, no retries inside here. If it fails, we let the batch fail.
   const response = await ai.models.generateContent({
     model: FAST_MODEL,
     contents: `Generate ${count} hard questions for ${topicName}. Batch ID: ${batchId}`,
     config: {
       systemInstruction,
-      temperature: 0.5, 
+      temperature: 0.6, 
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.ARRAY,
@@ -112,29 +113,9 @@ const generateBatch = async (
 };
 
 /**
- * WRAPPER: Retry Logic
- */
-const generateBatchWithRetry = async (
-  topicName: string, 
-  count: number, 
-  batchId: number, 
-  retries: number
-): Promise<Question[]> => {
-  try {
-    return await generateBatch(topicName, count, batchId);
-  } catch (error) {
-    if (retries > 0) {
-      console.warn(`[System] Batch ${batchId} failed. Rotating frequency... (${retries} retries left)`);
-      await delay(1500); // Wait 1.5s before retry to clear rate limits
-      return generateBatchWithRetry(topicName, count, batchId, retries - 1);
-    }
-    throw error;
-  }
-};
-
-/**
- * MAIN: TANK MODE GENERATION (Sequential)
- * Fetches batches one by one to avoid 429 Rate Limits.
+ * MAIN: FAST PARALLEL GENERATION
+ * Fires 5 batches of 3 questions simultaneously.
+ * Returns whatever succeeds.
  */
 export const generateQuestions = async (
   section: SectionType,
@@ -143,35 +124,35 @@ export const generateQuestions = async (
   topicName: string
 ): Promise<Question[]> => {
   try {
-    const allQuestions: Question[] = [];
-    
-    // We attempt 3 batches of 5 questions each = 15 questions.
-    const batches = [0, 1, 2];
+    // 5 Batches x 3 Questions = 15 Total Target
+    const batches = [0, 1, 2, 3, 4];
 
-    for (const batchId of batches) {
-      try {
-        // Add delay between successful batches to be gentle on the API
-        if (batchId > 0) await delay(1000);
+    // Fire all requests immediately (Parallel)
+    // We use a tiny stagger (100ms) just to ensure unique timestamps/key rotation happens cleanly
+    const batchPromises = batches.map(async (i) => {
+      await delay(i * 100); 
+      return generateBatch(topicName, 3, i);
+    });
 
-        // Try to generate this batch, allowing up to 3 retries (cycling keys)
-        const batchQuestions = await generateBatchWithRetry(topicName, 5, batchId, 3);
-        allQuestions.push(...batchQuestions);
-        
-      } catch (batchError) {
-        console.error(`[System] Batch ${batchId} critically failed. Skipping.`);
-        // We continue to the next batch even if this one fails.
-        // This ensures we get *some* questions rather than *none*.
+    // Promise.allSettled waits for all to finish (either success or fail)
+    // It does NOT throw if one fails.
+    const results = await Promise.allSettled(batchPromises);
+
+    // Filter only the successful batches
+    const successfulQuestions = results
+      .filter((r): r is PromiseFulfilledResult<Question[]> => r.status === 'fulfilled')
+      .map(r => r.value)
+      .flat();
+
+    // LOGIC: If we have ANY questions, we return them.
+    // Even if we only got 3 questions (1 batch), that's better than Vault Mode.
+    if (successfulQuestions.length > 0) {
+      if (successfulQuestions.length < 15) {
+        console.warn(`[System] Partial Yield: ${successfulQuestions.length}/15 questions generated.`);
       }
-    }
-
-    // FINAL CHECK: Do we have enough questions to start?
-    if (allQuestions.length > 0) {
-      if (allQuestions.length < 15) {
-        console.warn(`[System] Partial yield: ${allQuestions.length}/15 questions.`);
-      }
-      return allQuestions;
+      return successfulQuestions;
     } else {
-      // Only if ALL batches failed do we throw error to trigger Vault Mode
+      // Only throw if 0 questions were generated (All keys failed)
       throw new Error("All Intel Batches failed.");
     }
 
