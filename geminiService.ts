@@ -3,7 +3,42 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { Question, SectionType, ConceptBrief } from "./types.ts";
 import { getGenericFallback } from "./fallbackData.ts";
 
-const FAST_MODEL = "gemini-flash-latest";
+const FAST_MODEL = "gemini-3-flash-preview";
+
+/**
+ * HELPER: Determines the specific formatting rule based on topic.
+ */
+const getFormatInstruction = (topicName: string): string => {
+  const lower = topicName.toLowerCase();
+  
+  // English: Reading Comprehension
+  if (lower.includes('reading comprehension')) {
+    return "Include a short passage (4-6 sentences) followed by the question based on it.";
+  }
+  
+  // English: Ordering (Words or Sentences)
+  if (lower.includes('ordering')) {
+    return "The question MUST consist of jumbled parts labeled P, Q, R, S. The options MUST be sequences like 'PQRS', 'QRSP'. Do not solve it in the question text.";
+  }
+  
+  // English: Parts of Speech
+  if (lower.includes('parts of speech')) {
+    return "The question MUST contain a sentence with ONE specific word highlighted (e.g., in CAPS or quotes). Ask for the Part of Speech (Noun, Adverb, Preposition, etc.) of that word.";
+  }
+  
+  // English: Cloze / Fillers
+  if (lower.includes('cloze') || lower.includes('fill in') || lower.includes('prepositions')) {
+    return "The question text MUST contain a sentence or short paragraph with a blank represented by '_______'. Options must be words/phrases to fill that blank.";
+  }
+
+  // Maths: Trigonometry / Geometry
+  if (lower.includes('trigonometry') || lower.includes('geometry') || lower.includes('mensuration')) {
+    return "Questions should involve calculation or conceptual application. Use standard math notation.";
+  }
+  
+  // Default
+  return "No markdown. Concise text.";
+}
 
 /**
  * HELPER: Generates a small batch of questions.
@@ -16,14 +51,7 @@ const generateBatch = async (
 ): Promise<Question[]> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
-  // Custom Instruction Logic:
-  // For Reading Comprehension, we MUST allow passages.
-  // For others, we force conciseness to speed up generation.
-  const isReadingComp = topicName.toLowerCase().includes('reading comprehension') || topicName.toLowerCase().includes('comprehension');
-  
-  const constraint = isReadingComp 
-    ? "Include a short passage (3-5 sentences) followed by the question." 
-    : "No markdown. concise text.";
+  const constraint = getFormatInstruction(topicName);
 
   const systemInstruction = `UPSC CDS Exam Generator. Topic: ${topicName}. 
   Task: Generate ${count} MCQs.
@@ -33,7 +61,7 @@ const generateBatch = async (
 
   const response = await ai.models.generateContent({
     model: FAST_MODEL,
-    contents: `Generate ${count} hard MCQs for ${topicName}. Batch ID: ${offset}`,
+    contents: `Generate ${count} hard questions for ${topicName}. Batch ID: ${offset}`,
     config: {
       systemInstruction,
       temperature: 0.6,

@@ -8,14 +8,19 @@ export const SYLLABUS: Subject[] = [
     section: SectionType.ENGLISH,
     icon: '📚',
     topics: [
-      { id: 'spotting-errors', name: 'Spotting Errors', description: 'Grammar and usage analysis' },
-      { id: 'sentence-improvement', name: 'Sentence Improvement', description: 'Refining sentence structure and syntax' },
-      { id: 'sentence-rearrangement', name: 'Sentence Rearrangement', description: 'Logical ordering of sentences' },
-      { id: 'synonyms-antonyms', name: 'Synonyms & Antonyms', description: 'Vocabulary range and word meanings' },
-      { id: 'idioms-phrases', name: 'Idioms & Phrases', description: 'Idiomatic expressions and their usage' },
-      { id: 'vocabulary', name: 'Vocabulary', description: 'Comprehensive lexical knowledge' },
-      { id: 'reading-comprehension', name: 'Reading Comprehension', description: 'Analytical reading and inference' },
-      { id: 'grammar-usage', name: 'Grammar & Usage', description: 'Advanced rules of English grammar' }
+      { id: 'spotting-errors', name: 'Spotting Errors', description: 'Identify grammatical errors in sentences' },
+      { id: 'antonyms', name: 'Antonyms', description: 'Choose the word opposite in meaning' },
+      { id: 'synonyms', name: 'Synonyms', description: 'Choose the word similar in meaning' },
+      { id: 'idioms-phrases', name: 'Idioms & Phrases', description: 'Meaning and usage of idioms' },
+      { id: 'ordering-of-words', name: 'Ordering of Words', description: 'Arrange jumbled parts (P, Q, R, S) within a sentence' },
+      { id: 'ordering-of-sentences', name: 'Ordering of Sentences', description: 'Logical arrangement of sentences into a paragraph' },
+      { id: 'fill-in-the-blanks', name: 'Fill in the Blanks', description: 'Grammar and vocabulary based fillers' },
+      { id: 'cloze-composition', name: 'Cloze Composition', description: 'Passage with blanks to be filled' },
+      { id: 'reading-comprehension', name: 'Reading Comprehension', description: 'Passage analysis and inference' },
+      { id: 'parts-of-speech', name: 'Parts of Speech', description: 'Identify Noun, Pronoun, Adverb, etc. of specific words' },
+      { id: 'word-meaning', name: 'Word Meaning', description: 'Contextual meaning of specific words' },
+      { id: 'prepositions-determiners', name: 'Prepositions & Determiners', description: 'Specific usage of grammar particles' },
+      { id: 'completion-of-sentence', name: 'Completion of Sentence', description: 'Complete the sentence logically' }
     ]
   },
   {
@@ -24,19 +29,62 @@ export const SYLLABUS: Subject[] = [
     section: SectionType.MATHEMATICS,
     icon: '📐',
     topics: [
-      { id: 'number-system', name: 'Number System', description: 'Types of numbers, divisibility, and properties' },
-      { id: 'lcm-hcf', name: 'LCM & HCF', description: 'Common multiples and factors' },
-      { id: 'ratio-proportion', name: 'Ratio & Proportion', description: 'Comparison of quantities and variations' },
+      { id: 'number-system', name: 'Number System', description: 'Divisibility, remainders, and properties' },
+      { id: 'algebra', name: 'Algebra', description: 'Polynomials, Linear/Quadratic Equations, Sets' },
+      { id: 'trigonometry', name: 'Trigonometry', description: 'Identities, Heights & Distances' },
+      { id: 'geometry', name: 'Geometry', description: 'Triangles, Circles, Lines & Angles' },
+      { id: 'mensuration', name: 'Mensuration', description: 'Area (2D) and Volume (3D)' },
+      { id: 'statistics', name: 'Statistics', description: 'Mean, Median, Mode, Data Interpretation' },
       { id: 'percentage', name: 'Percentage', description: 'Calculations based on parts of a hundred' },
-      { id: 'profit-loss', name: 'Profit & Loss', description: 'Commercial mathematics and trade logic' },
-      { id: 'interest', name: 'Simple & Compound Interest', description: 'Time value of money and interest rates' },
-      { id: 'time-work', name: 'Time & Work', description: 'Work efficiency and temporal calculations' },
-      { id: 'time-distance', name: 'Time & Distance', description: 'Speed, distance, and relative motion' },
-      { id: 'algebraic-expressions', name: 'Algebraic Expressions', description: 'Polynomials and algebraic identities' },
-      { id: 'linear-equations', name: 'Linear Equations', description: 'Solving equations in one and two variables' },
-      { id: 'geometry', name: 'Geometry', description: 'Theorems on lines, angles, and shapes' },
-      { id: 'mensuration', name: 'Mensuration', description: 'Area, perimeter, and volume of figures' },
-      { id: 'statistics', name: 'Statistics', description: 'Data presentation and central tendency' }
+      { id: 'profit-loss', name: 'Profit & Loss', description: 'Commercial mathematics' },
+      { id: 'simple-compound-interest', name: 'SI & CI', description: 'Interest calculations' },
+      { id: 'ratio-proportion', name: 'Ratio & Proportion', description: 'Comparison of quantities' },
+      { id: 'time-work', name: 'Time & Work', description: 'Efficiency and work days' },
+      { id: 'time-speed-distance', name: 'Time, Speed & Distance', description: 'Relative speed, trains, boats' },
+      { id: 'logarithms', name: 'Logarithms', description: 'Basic properties and calculations' }
+    ]
+  },
+  {
+    id: 'gk_general_science',
+    name: 'General Science',
+    section: SectionType.GK,
+    icon: '🔬',
+    categories: [
+         {
+             id: 'physics',
+             name: 'Physics',
+             topics: [
+                 { id: 'mechanics', name: 'Mechanics', description: 'Motion, Force, Newton\'s Laws' },
+                 { id: 'optics', name: 'Optics', description: 'Light, Mirrors, Lenses' },
+                 { id: 'electricity-magnetism', name: 'Electricity & Magnetism', description: 'Circuits, Current, Magnetic Effects' },
+                 { id: 'thermodynamics', name: 'Heat & Thermodynamics', description: 'Temperature, Heat transfer' },
+                 { id: 'sound-waves', name: 'Sound & Waves', description: 'Properties of sound, wave motion' },
+                 { id: 'properties-of-matter', name: 'Properties of Matter', description: 'Elasticity, Surface Tension, Viscosity' }
+             ]
+         },
+         {
+             id: 'chemistry',
+             name: 'Chemistry',
+             topics: [
+                 { id: 'atomic-structure', name: 'Atomic Structure', description: 'Atoms, Molecules, Isotopes' },
+                 { id: 'acids-bases-salts', name: 'Acids, Bases & Salts', description: 'pH scale, chemical properties' },
+                 { id: 'metals-nonmetals', name: 'Metals & Non-Metals', description: 'Properties and reactivity series' },
+                 { id: 'carbon-compounds', name: 'Carbon & its Compounds', description: 'Organic chemistry basics' },
+                 { id: 'chemical-reactions', name: 'Chemical Reactions', description: 'Types of reactions, oxidation-reduction' },
+                 { id: 'everyday-chemistry', name: 'Chemistry in Everyday Life', description: 'Soaps, Glass, Polymers, Fuels' }
+             ]
+         },
+         {
+             id: 'biology',
+             name: 'Biology',
+             topics: [
+                 { id: 'cell-biology', name: 'Cell Biology', description: 'Structure of cell, DNA, RNA' },
+                 { id: 'human-physiology', name: 'Human Physiology', description: 'Digestive, Respiratory, Circulatory systems' },
+                 { id: 'diseases-nutrition', name: 'Diseases & Nutrition', description: 'Vitamins, deficiency, pathogens' },
+                 { id: 'plant-physiology', name: 'Plant Physiology', description: 'Photosynthesis, plant parts' },
+                 { id: 'genetics-evolution', name: 'Genetics & Evolution', description: 'Heredity and origin of life' }
+             ]
+         }
     ]
   },
   {
@@ -49,13 +97,10 @@ export const SYLLABUS: Subject[] = [
         id: 'ancient-history',
         name: 'Ancient History',
         topics: [
-          { id: 'prehistoric-age', name: 'Prehistoric Age', description: 'Stone age to metal age transition' },
           { id: 'ivc', name: 'Indus Valley Civilization', description: 'Urban planning and Harappan culture' },
-          { id: 'vedic-age', name: 'Vedic Age (Early & Later)', description: 'Society, religion, and the Vedas' },
-          { id: 'religious-movements', name: 'Religious Movements', description: 'Buddhism & Jainism' },
-          { id: 'mauryan-empire', name: 'Mauryan Empire', description: 'Chandra Gupta to Ashoka' },
-          { id: 'post-mauryan', name: 'Post-Mauryan Period', description: 'Regional powers after the Mauryas' },
-          { id: 'gupta-empire', name: 'Gupta Empire', description: 'Golden age of Ancient India' }
+          { id: 'vedic-age', name: 'Vedic Age', description: 'Society, religion, and the Vedas' },
+          { id: 'religious-movements', name: 'Buddhism & Jainism', description: 'Teachings and Councils' },
+          { id: 'mauryan-gupta', name: 'Mauryan & Gupta Empires', description: 'Administration and Golden Age' }
         ]
       },
       {
@@ -63,32 +108,26 @@ export const SYLLABUS: Subject[] = [
         name: 'Medieval History',
         topics: [
           { id: 'delhi-sultanate', name: 'Delhi Sultanate', description: 'Slave to Lodi dynasties' },
-          { id: 'mughal-empire', name: 'Mughal Empire', description: 'Babur to the Great Mughals' },
-          { id: 'vijayanagara-bahmani', name: 'Vijayanagara & Bahmani Kingdoms', description: 'Southern medieval powers' },
-          { id: 'bhakti-sufi', name: 'Bhakti & Sufi Movements', description: 'Spiritual and cultural reforms' }
+          { id: 'mughal-empire', name: 'Mughal Empire', description: 'Administration, Art, and Architecture' },
+          { id: 'vijayanagara', name: 'Vijayanagara Empire', description: 'South Indian Polity' }
         ]
       },
       {
         id: 'modern-history',
         name: 'Modern History',
         topics: [
-          { id: 'advent-europeans', name: 'Advent of Europeans', description: 'Portuguese, Dutch, French, and British' },
-          { id: 'british-expansion', name: 'British Expansion in India', description: 'Conquests and administrative policies' },
-          { id: 'economic-impact', name: 'Economic Impact of British Rule', description: 'Land revenue and drainage of wealth' },
-          { id: 'socio-religious-reforms', name: 'Socio-Religious Reform Movements', description: '19th-century social awakening' },
-          { id: 'revolt-1857', name: 'Revolt of 1857', description: 'First war of independence' }
+          { id: 'advent-europeans', name: 'Advent of Europeans', description: 'Portuguese, British, French' },
+          { id: 'revolt-1857', name: 'Revolt of 1857', description: 'Causes and Consequences' },
+          { id: 'socio-religious', name: 'Socio-Religious Reforms', description: 'Raja Ram Mohan Roy, etc.' }
         ]
       },
       {
         id: 'national-movement',
         name: 'Indian National Movement',
         topics: [
-          { id: 'formation-inc', name: 'Formation of INC', description: 'Birth of Indian National Congress' },
-          { id: 'moderates-extremists', name: 'Moderates & Extremists', description: 'Internal ideologies of the Congress' },
-          { id: 'gandhian-era', name: 'Gandhian Era', description: 'Gandhi’s entry and major movements' },
-          { id: 'mass-movements', name: 'Mass Movements', description: 'NCM, CDM, and Quit India' },
-          { id: 'constitutional-dev', name: 'Constitutional Developments', description: 'Pre-independence acts and laws' },
-          { id: 'partition-independence', name: 'Partition & Independence', description: 'Transfer of power and 1947' }
+          { id: 'inc-phase', name: 'INC Phases (Moderate/Extremist)', description: 'Congress ideology' },
+          { id: 'gandhian-era', name: 'Gandhian Era', description: 'NCM, CDM, Quit India' },
+          { id: 'independence-partition', name: 'Partition & Independence', description: 'Cabinet Mission, Mountbatten Plan' }
         ]
       }
     ]
@@ -103,42 +142,33 @@ export const SYLLABUS: Subject[] = [
         id: 'physical-geography',
         name: 'Physical Geography',
         topics: [
-          { id: 'earth-structure', name: 'Earth Structure', description: 'Internal layers and composition' },
-          { id: 'rocks', name: 'Rocks', description: 'Types and rock cycle' },
-          { id: 'mountains-plateaus', name: 'Mountains & Plateaus', description: 'Geomorphology of landforms' },
-          { id: 'rivers-physical', name: 'Rivers', description: 'Fluvial processes and drainage patterns' },
-          { id: 'climate-physical', name: 'Climate', description: 'Weather patterns and global climate' },
-          { id: 'natural-vegetation', name: 'Natural Vegetation', description: 'Global flora and biomes' }
+          { id: 'origin-earth', name: 'Origin & Evolution of Earth', description: 'Solar system, Geological time scale, Lat/Long' },
+          { id: 'geomorphology', name: 'Geomorphology (Landforms)', description: 'Interior of Earth, Volcanoes, Earthquakes, Rocks' },
+          { id: 'climatology', name: 'Climatology', description: 'Atmosphere, Insolation, Pressure Belts, Winds, Cyclones' },
+          { id: 'oceanography', name: 'Oceanography', description: 'Ocean Relief, Temperature, Salinity, Currents, Tides' },
+          { id: 'biogeography', name: 'Biogeography', description: 'World Soils, Vegetation Zones, Environmental Ecology' }
         ]
       },
       {
         id: 'indian-geography',
         name: 'Indian Geography',
         topics: [
-          { id: 'himalayan-mountains', name: 'The Himalayan Mountains', description: 'Formation, ranges, and peaks' },
-          { id: 'northern-plains', name: 'The Northern Plains', description: 'Indo-Gangetic-Brahmaputra plains' },
-          { id: 'peninsular-plateau', name: 'The Peninsular Plateau', description: 'Central Highlands and Deccan Plateau' },
-          { id: 'indian-desert', name: 'The Indian Desert', description: 'Arid region and Thar topography' },
-          { id: 'coastal-plains', name: 'The Coastal Plains', description: 'Western and Eastern coastal strips' },
-          { id: 'islands-india', name: 'The Islands', description: 'Andaman & Nicobar and Lakshadweep' },
-          { id: 'himalayan-river-system', name: 'Himalayan River Systems', description: 'Indus, Ganga, and Brahmaputra' },
-          { id: 'peninsular-river-system', name: 'Peninsular River Systems', description: 'East and West flowing rivers' },
-          { id: 'lakes-water-resources', name: 'Lakes & Water Resources', description: 'Indian lakes and wetland conservation' },
-          { id: 'soils-india', name: 'Soils', description: 'Alluvial, Black, Red, Laterite, etc.' },
-          { id: 'climate-india', name: 'Climate of India', description: 'Monsoons and regional seasons' },
-          { id: 'natural-resources', name: 'Natural Resources', description: 'Minerals, energy, and forest wealth' },
-          { id: 'agriculture-india', name: 'Agriculture', description: 'Crops, irrigation, and green revolution' }
+          { id: 'physiography-india', name: 'Physiography of India', description: 'Himalayas, Plains, Peninsular Plateau, Islands' },
+          { id: 'drainage-system', name: 'Drainage System', description: 'Himalayan & Peninsular Rivers, Lakes' },
+          { id: 'climate-india', name: 'Climate of India', description: 'Monsoons, Seasons, Rainfall Patterns, Climatic Regions' },
+          { id: 'soil-vegetation-india', name: 'Soils & Natural Vegetation', description: 'Types of Soil, Forest Cover, Wildlife Conservation' },
+          { id: 'agriculture-india', name: 'Agriculture & Irrigation', description: 'Major Crops, Green Revolution, Irrigation Projects' },
+          { id: 'resources-india', name: 'Mineral & Energy Resources', description: 'Distribution of Iron, Coal, Oil, Non-conventional Energy' },
+          { id: 'transport-india', name: 'Transport & Infrastructure', description: 'Railways, Roadways, Ports, Inland Waterways' }
         ]
       },
       {
         id: 'world-geography',
         name: 'World Geography',
         topics: [
-          { id: 'continents', name: 'Continents', description: 'Major features of all continents' },
-          { id: 'oceans', name: 'Oceans', description: 'Oceanography and marine resources' },
-          { id: 'major-deserts', name: 'Major Deserts', description: 'Global arid regions' },
-          { id: 'major-rivers-world', name: 'Major Rivers', description: 'World’s important river systems' },
-          { id: 'straits-canals', name: 'Important Straits & Canals', description: 'Global maritime mapping' }
+          { id: 'mapping-continents', name: 'Mapping (Continents)', description: 'Key Physical Features, Straits, Islands, Deserts' },
+          { id: 'economic-geography', name: 'Economic Geography', description: 'Global Resources, Industries, Trade Routes' },
+          { id: 'human-geography', name: 'Human Geography', description: 'Tribes, Demographics, Migration Patterns' }
         ]
       }
     ]
@@ -149,18 +179,12 @@ export const SYLLABUS: Subject[] = [
     section: SectionType.GK,
     icon: '⚖️',
     topics: [
-      { id: 'constitution-india', name: 'Constitution of India', description: 'Framing, sources, and key features' },
-      { id: 'preamble', name: 'Preamble', description: 'Philosophy and objectives of the Constitution' },
-      { id: 'fundamental-rights', name: 'Fundamental Rights', description: 'Part III - Rights and writs' },
-      { id: 'dpsp', name: 'Directive Principles of State Policy', description: 'Part IV - State guidance' },
-      { id: 'fundamental-duties', name: 'Fundamental Duties', description: 'Responsibilities of Indian citizens' },
-      { id: 'union-government', name: 'Union Government', description: 'President, PM, Parliament, and Cabinet' },
-      { id: 'state-government', name: 'State Government', description: 'Governor, CM, and State Legislature' },
-      { id: 'judiciary', name: 'The Judiciary', description: 'Supreme Court and High Courts' },
-      { id: 'local-self-government', name: 'Local Self Government', description: '73rd & 74th Amendment Acts' },
-      { id: 'emergency-provisions', name: 'Emergency Provisions', description: 'National, State, and Financial emergency' },
-      { id: 'amendments', name: 'Important Amendments', description: 'Landmark changes to the Constitution' },
-      { id: 'constitutional-bodies', name: 'Constitutional & Statutory Bodies', description: 'UPSC, ECI, CAG, NITI Aayog' }
+      { id: 'constitution-preamble', name: 'Constitution & Preamble', description: 'Features and philosophy' },
+      { id: 'fr-dpsp-fd', name: 'FR, DPSP & Fundamental Duties', description: 'Rights and State Guidelines' },
+      { id: 'parliament', name: 'Parliament', description: 'Lok Sabha, Rajya Sabha, Procedures' },
+      { id: 'judiciary', name: 'Judiciary', description: 'Supreme Court & High Courts' },
+      { id: 'constitutional-bodies', name: 'Constitutional Bodies', description: 'UPSC, EC, CAG' },
+      { id: 'panchayati-raj', name: 'Panchayati Raj', description: 'Local Self Government' }
     ]
   },
   {
@@ -169,55 +193,10 @@ export const SYLLABUS: Subject[] = [
     section: SectionType.GK,
     icon: '💹',
     topics: [
-      { id: 'basic-economic-concepts', name: 'Basic Economic Concepts', description: 'Micro and Macro fundamentals' },
-      { id: 'national-income', name: 'National Income', description: 'GDP, GNP, and NNP concepts' },
-      { id: 'indian-economy-overview', name: 'Indian Economy', description: 'Features and structural changes' },
-      { id: 'planning-india', name: 'Planning in India', description: 'Five Year Plans and NITI Aayog' },
-      { id: 'poverty-unemployment', name: 'Poverty & Unemployment', description: 'Socio-economic challenges' },
-      { id: 'banking-system', name: 'Banking System', description: 'RBI and commercial banking' },
-      { id: 'inflation', name: 'Inflation', description: 'Causes, effects, and control measures' },
-      { id: 'budget-fiscal-policy', name: 'Budget & Fiscal Policy', description: 'Government finance and taxation' }
-    ]
-  },
-  {
-    id: 'gk_environment',
-    name: 'Environment & Ecology',
-    section: SectionType.GK,
-    icon: '🌳',
-    topics: [
-      { id: 'ecosystem', name: 'Ecosystem', description: 'Structure and functions of ecosystems' },
-      { id: 'biodiversity', name: 'Biodiversity', description: 'Flora, fauna, and hotspots' },
-      { id: 'environmental-pollution', name: 'Environmental Pollution', description: 'Air, water, and soil pollution' },
-      { id: 'climate-change', name: 'Climate Change', description: 'Global warming and mitigation' },
-      { id: 'conservation-environment', name: 'Conservation of Environment', description: 'Efforts and laws for conservation' },
-      { id: 'national-parks-wildlife', name: 'National Parks & Wildlife Sanctuaries', description: 'Protected areas in India' }
-    ]
-  },
-  {
-    id: 'gk_art_culture',
-    name: 'Art & Culture',
-    section: SectionType.GK,
-    icon: '🎨',
-    topics: [
-      { id: 'indian-architecture', name: 'Indian Architecture', description: 'Ancient to modern building styles' },
-      { id: 'sculpture', name: 'Sculpture', description: 'Art of carving and modeling' },
-      { id: 'paintings', name: 'Paintings', description: 'Mural, miniature, and folk paintings' },
-      { id: 'classical-folk-dances', name: 'Classical & Folk Dances', description: 'Indian dance traditions' },
-      { id: 'music', name: 'Music', description: 'Hindustani and Carnatic styles' },
-      { id: 'fairs-festivals', name: 'Fairs & Festivals', description: 'Cultural celebrations across India' }
-    ]
-  },
-  {
-    id: 'gk_science_tech',
-    name: 'Science & Technology',
-    section: SectionType.GK,
-    icon: '🚀',
-    topics: [
-      { id: 'defence-technology', name: 'Defence Technology', description: 'Missiles, tanks, and defense systems' },
-      { id: 'space-technology', name: 'Space Technology', description: 'ISRO missions and satellites' },
-      { id: 'nuclear-technology', name: 'Nuclear Technology', description: 'Atomic power and weapons' },
-      { id: 'information-technology', name: 'Information Technology', description: 'Computers, internet, and AI' },
-      { id: 'biotechnology', name: 'Biotechnology', description: 'Genetic engineering and medical tech' }
+      { id: 'national-income', name: 'National Income & Inflation', description: 'GDP, CPI, WPI' },
+      { id: 'banking-monetary', name: 'Banking & Monetary Policy', description: 'RBI functions, Repo Rate' },
+      { id: 'budget-taxation', name: 'Budget & Fiscal Policy', description: 'Taxation, Deficits, GST' },
+      { id: 'poverty-unemployment', name: 'Poverty & Unemployment', description: 'Schemes and Indices' }
     ]
   },
   {
@@ -226,11 +205,10 @@ export const SYLLABUS: Subject[] = [
     section: SectionType.GK,
     icon: '📰',
     topics: [
-      { id: 'national-international-events', name: 'National & International Events', description: 'Significant global happenings' },
-      { id: 'important-dates-events', name: 'Important Dates & Events', description: 'Yearly milestones' },
-      { id: 'sports-current', name: 'Sports', description: 'Latest in athletic championships' },
-      { id: 'awards-honours', name: 'Awards & Honours', description: 'Civilian and gallantry awards' },
-      { id: 'government-schemes', name: 'Government Schemes', description: 'Welfare and development programs' }
+      { id: 'defence-news', name: 'Defence News', description: 'Exercises, Weapons, Deals' },
+      { id: 'international-relations', name: 'International Relations', description: 'Summits, Treaties, Geopolitics' },
+      { id: 'awards-sports', name: 'Awards & Sports', description: 'Honours and Championships' },
+      { id: 'sci-tech-current', name: 'Science & Tech Developments', description: 'Space missions, New tech' }
     ]
   }
 ];
