@@ -77,8 +77,11 @@ const App: React.FC = () => {
             onClick={() => {
               if (item.sub) {
                 setSelectedSubject(item.sub);
+                setSelectedCategory(null); // FIX: Ensure category is cleared to avoid cross-contamination
                 setState('TOPIC_SELECTION');
               } else {
+                setSelectedSubject(null);
+                setSelectedCategory(null);
                 setState('GK_SUBJECT_SELECTION');
               }
             }}
@@ -100,7 +103,7 @@ const App: React.FC = () => {
 
   const renderGKSubjects = () => (
     <div className="max-w-6xl mx-auto px-4 py-16 animate-fade-in">
-      <button onClick={() => setState('HOME')} className="mb-12 text-slate-400 hover:text-indigo-600 font-black text-[10px] uppercase tracking-[0.4em] flex items-center">
+      <button onClick={reset} className="mb-12 text-slate-400 hover:text-indigo-600 font-black text-[10px] uppercase tracking-[0.4em] flex items-center">
         ← DISMISS GK SUITE
       </button>
       <div className="mb-16 border-b border-slate-200 pb-8">
@@ -109,7 +112,14 @@ const App: React.FC = () => {
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
         {gkSubjects.map((sub) => (
-          <div key={sub.id} onClick={() => { setSelectedSubject(sub); if(sub.categories) setState('CATEGORY_SELECTION'); else setState('TOPIC_SELECTION'); }} className="group bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-lg hover:border-emerald-500 hover:shadow-2xl transition-all cursor-pointer flex flex-col items-center text-center">
+          <div key={sub.id} 
+            onClick={() => { 
+              setSelectedSubject(sub); 
+              setSelectedCategory(null); // FIX: Clear any previous category selection
+              if(sub.categories) setState('CATEGORY_SELECTION'); 
+              else setState('TOPIC_SELECTION'); 
+            }} 
+            className="group bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-lg hover:border-emerald-500 hover:shadow-2xl transition-all cursor-pointer flex flex-col items-center text-center">
             <div className="text-6xl mb-6 group-hover:scale-110 transition-transform">{sub.icon}</div>
             <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">{sub.name}</h3>
           </div>
@@ -120,7 +130,7 @@ const App: React.FC = () => {
 
   const renderCategorySelection = () => (
     <div className="max-w-4xl mx-auto px-4 py-16 animate-fade-in">
-      <button onClick={() => setState('GK_SUBJECT_SELECTION')} className="mb-10 text-slate-400 hover:text-indigo-600 font-black text-[10px] uppercase tracking-[0.4em]">
+      <button onClick={() => { setSelectedSubject(null); setState('GK_SUBJECT_SELECTION'); }} className="mb-10 text-slate-400 hover:text-indigo-600 font-black text-[10px] uppercase tracking-[0.4em]">
         ← BACK TO CORE
       </button>
       <div className="mb-12 flex items-center space-x-8 bg-slate-900 p-12 rounded-[3rem] shadow-2xl">
@@ -145,12 +155,23 @@ const App: React.FC = () => {
   );
 
   const renderTopicSelection = () => {
+    // Logic: If a category is selected (GK), show its topics. Otherwise show Subject topics (Maths/English).
+    // The previous bug was due to selectedCategory lingering when switching to English.
     const topics = selectedCategory ? selectedCategory.topics : selectedSubject?.topics;
-    const backState = selectedCategory ? 'CATEGORY_SELECTION' : (selectedSubject?.section === SectionType.GK ? 'GK_SUBJECT_SELECTION' : 'HOME');
+    
+    // Determine back destination
+    let backAction;
+    if (selectedCategory) {
+      backAction = () => { setSelectedCategory(null); setState('CATEGORY_SELECTION'); };
+    } else if (selectedSubject?.section === SectionType.GK) {
+      backAction = () => { setSelectedSubject(null); setState('GK_SUBJECT_SELECTION'); };
+    } else {
+      backAction = reset;
+    }
 
     return (
       <div className="max-w-4xl mx-auto px-4 py-16 animate-fade-in">
-        <button onClick={() => setState(backState as any)} className="mb-10 text-slate-400 hover:text-indigo-600 font-black text-[10px] uppercase tracking-[0.4em]">
+        <button onClick={backAction} className="mb-10 text-slate-400 hover:text-indigo-600 font-black text-[10px] uppercase tracking-[0.4em]">
           ← RETURN
         </button>
         <div className="mb-12 flex items-center space-x-8 bg-white p-12 rounded-[3rem] shadow-xl border border-slate-50">
