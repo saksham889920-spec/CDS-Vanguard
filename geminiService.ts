@@ -8,7 +8,6 @@ const FAST_MODEL = "gemini-2.5-flash";
 /**
  * KEY ROTATION LOGIC
  * Supports multiple API keys separated by commas.
- * The vite.config.ts now aggregates AIzaSy_Key1...5 into process.env.API_KEY
  */
 const API_KEYS = (process.env.API_KEY || "")
   .split(",")
@@ -17,7 +16,6 @@ const API_KEYS = (process.env.API_KEY || "")
 
 let keyIndex = 0;
 
-// Log key status for debugging
 if (API_KEYS.length > 0) {
   console.log(`[System] Intel Uplink Established: ${API_KEYS.length} Active Key(s) Detected.`);
 } else {
@@ -31,11 +29,11 @@ const getNextApiKey = (): string => {
   return key;
 };
 
-// Helper for delay to prevent hitting rate limits
+// Helper for delay
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 /**
- * HELPER: Determines the specific formatting rule based on topic.
+ * HELPER: Determines formatting rules.
  */
 const getFormatInstruction = (topicName: string): string => {
   const lower = topicName.toLowerCase();
@@ -59,8 +57,7 @@ const getFormatInstruction = (topicName: string): string => {
 }
 
 /**
- * HELPER: Generates a batch of questions.
- * @param attempt - Internal counter for retries
+ * HELPER: Generates a single batch of questions.
  */
 const generateBatch = async (
   topicName: string, 
@@ -80,12 +77,13 @@ const generateBatch = async (
   Schema: id (string), text (string), options (string[]), correctAnswer (0-3 int).
   Constraint: ${constraint}`;
 
+  // We lower the temperature slightly to ensure valid JSON structure
   const response = await ai.models.generateContent({
     model: FAST_MODEL,
     contents: `Generate ${count} hard questions for ${topicName}. Batch ID: ${batchId}`,
     config: {
       systemInstruction,
-      temperature: 0.6,
+      temperature: 0.5, 
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.ARRAY,
@@ -114,8 +112,7 @@ const generateBatch = async (
 };
 
 /**
- * WRAPPER: Retries generation with a different key if one fails.
- * This ensures that if you have 1 valid key and 4 bad ones, it eventually finds the valid one.
+ * WRAPPER: Retry Logic
  */
 const generateBatchWithRetry = async (
   topicName: string, 
@@ -127,9 +124,8 @@ const generateBatchWithRetry = async (
     return await generateBatch(topicName, count, batchId);
   } catch (error) {
     if (retries > 0) {
-      console.warn(`[System] Batch ${batchId} failed. Switching frequency... (${retries} retries left)`);
-      // Wait a bit before retrying to let the key rotation happen and rate limits cool down
-      await delay(800 + Math.random() * 500); 
+      console.warn(`[System] Batch ${batchId} failed. Rotating frequency... (${retries} retries left)`);
+      await delay(1500); // Wait 1.5s before retry to clear rate limits
       return generateBatchWithRetry(topicName, count, batchId, retries - 1);
     }
     throw error;
@@ -137,9 +133,8 @@ const generateBatchWithRetry = async (
 };
 
 /**
- * PHASE 1: ROBUST PARALLEL GENERATION
- * Strategy: 3 Batches of 5 Questions = 15 Total.
- * Uses aggressive retries to handle flaky keys.
+ * MAIN: TANK MODE GENERATION (Sequential)
+ * Fetches batches one by one to avoid 429 Rate Limits.
  */
 export const generateQuestions = async (
   section: SectionType,
@@ -148,44 +143,51 @@ export const generateQuestions = async (
   topicName: string
 ): Promise<Question[]> => {
   try {
-    // We launch 3 batches of 5 questions each.
-    // If we have at least 1 valid API key, the retry logic will ensure all 3 succeed.
-    const batchPromises = [0, 1, 2].map(async (batchId) => {
-      // Stagger start times to spread load
-      await delay(batchId * 600); 
-      // Retry count = number of keys + 1 (to ensure we cycle through all potential keys)
-      const maxRetries = Math.max(3, API_KEYS.length + 1);
-      return generateBatchWithRetry(topicName, 5, batchId, maxRetries);
-    });
+    const allQuestions: Question[] = [];
+    
+    // We attempt 3 batches of 5 questions each = 15 questions.
+    const batches = [0, 1, 2];
 
-    const results = await Promise.allSettled(batchPromises);
+    for (const batchId of batches) {
+      try {
+        // Add delay between successful batches to be gentle on the API
+        if (batchId > 0) await delay(1000);
 
-    const successfulQuestions = results
-      .filter((r): r is PromiseFulfilledResult<Question[]> => r.status === 'fulfilled')
-      .map(r => r.value)
-      .flat();
-
-    if (successfulQuestions.length > 0) {
-      if (successfulQuestions.length < 15) {
-        console.warn(`[System] Optimization Complete. Yield: ${successfulQuestions.length}/15.`);
+        // Try to generate this batch, allowing up to 3 retries (cycling keys)
+        const batchQuestions = await generateBatchWithRetry(topicName, 5, batchId, 3);
+        allQuestions.push(...batchQuestions);
+        
+      } catch (batchError) {
+        console.error(`[System] Batch ${batchId} critically failed. Skipping.`);
+        // We continue to the next batch even if this one fails.
+        // This ensures we get *some* questions rather than *none*.
       }
-      return successfulQuestions;
+    }
+
+    // FINAL CHECK: Do we have enough questions to start?
+    if (allQuestions.length > 0) {
+      if (allQuestions.length < 15) {
+        console.warn(`[System] Partial yield: ${allQuestions.length}/15 questions.`);
+      }
+      return allQuestions;
     } else {
-      throw new Error("All Intel Uplinks Failed.");
+      // Only if ALL batches failed do we throw error to trigger Vault Mode
+      throw new Error("All Intel Batches failed.");
     }
 
   } catch (error) {
     console.error("Critical Failure:", error);
+    // Return Fallback (Vault Mode)
     return getGenericFallback(topicName);
   }
 };
 
 /**
- * PHASE 3: ON-DEMAND INTEL & EXPLANATION
+ * PHASE 3: ON-DEMAND INTEL
  */
 export const getDetailedConceptBrief = async (questionText: string, topicName: string): Promise<ConceptBrief> => {
   const apiKey = getNextApiKey();
-  if (!apiKey) throw new Error("No API Key available for explanation");
+  if (!apiKey) throw new Error("No API Key available");
 
   const ai = new GoogleGenAI({ apiKey });
 
