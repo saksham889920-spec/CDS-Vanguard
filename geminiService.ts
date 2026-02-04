@@ -3,7 +3,7 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { Question, SectionType, ConceptBrief } from "./types.ts";
 import { getGenericFallback } from "./fallbackData.ts";
 
-const FAST_MODEL = "gemini-3-flash-preview";
+const FAST_MODEL = "gemini-2.5-flash";
 
 /**
  * HELPER: Determines the specific formatting rule based on topic.

@@ -142,33 +142,49 @@ export const SYLLABUS: Subject[] = [
         id: 'physical-geography',
         name: 'Physical Geography',
         topics: [
-          { id: 'origin-earth', name: 'Origin & Evolution of Earth', description: 'Solar system, Geological time scale, Lat/Long' },
-          { id: 'geomorphology', name: 'Geomorphology (Landforms)', description: 'Interior of Earth, Volcanoes, Earthquakes, Rocks' },
-          { id: 'climatology', name: 'Climatology', description: 'Atmosphere, Insolation, Pressure Belts, Winds, Cyclones' },
-          { id: 'oceanography', name: 'Oceanography', description: 'Ocean Relief, Temperature, Salinity, Currents, Tides' },
-          { id: 'biogeography', name: 'Biogeography', description: 'World Soils, Vegetation Zones, Environmental Ecology' }
+          { id: 'geo-solar-system', name: 'Solar System & Evolution', description: 'Planets, Earth origin, Geological Time Scale' },
+          { id: 'geo-interior', name: 'Interior of the Earth', description: 'Crust, Mantle, Core, Discontinuities' },
+          { id: 'geo-rocks', name: 'Rocks & Rock Cycle', description: 'Igneous, Sedimentary, Metamorphic rocks' },
+          { id: 'geo-tectonics', name: 'Plate Tectonics & Drift', description: 'Continental Drift, Plates, Boundaries' },
+          { id: 'geo-volcanoes', name: 'Volcanism & Earthquakes', description: 'Volcano types, Earthquake waves, Zones' },
+          { id: 'geo-landforms', name: 'Geomorphic Landforms', description: 'Fluvial, Glacial, Aeolian, Karst features' },
+          { id: 'geo-atmosphere', name: 'Atmosphere Composition', description: 'Layers, Composition, Insolation, Heat Budget' },
+          { id: 'geo-winds', name: 'Winds & Pressure Belts', description: 'Planetary winds, Coriolis force, Jet Streams' },
+          { id: 'geo-cyclones', name: 'Cyclones & Fronts', description: 'Tropical/Temperate Cyclones, Humidity' },
+          { id: 'geo-ocean-relief', name: 'Ocean Relief & Salinity', description: 'Ocean floor, Salinity distribution' },
+          { id: 'geo-currents', name: 'Ocean Currents & Tides', description: 'Atlantic/Pacific/Indian currents, Tides' },
+          { id: 'geo-climate-zones', name: 'World Climatic Zones', description: 'Koppen classification, Biomes' }
         ]
       },
       {
         id: 'indian-geography',
         name: 'Indian Geography',
         topics: [
-          { id: 'physiography-india', name: 'Physiography of India', description: 'Himalayas, Plains, Peninsular Plateau, Islands' },
-          { id: 'drainage-system', name: 'Drainage System', description: 'Himalayan & Peninsular Rivers, Lakes' },
-          { id: 'climate-india', name: 'Climate of India', description: 'Monsoons, Seasons, Rainfall Patterns, Climatic Regions' },
-          { id: 'soil-vegetation-india', name: 'Soils & Natural Vegetation', description: 'Types of Soil, Forest Cover, Wildlife Conservation' },
-          { id: 'agriculture-india', name: 'Agriculture & Irrigation', description: 'Major Crops, Green Revolution, Irrigation Projects' },
-          { id: 'resources-india', name: 'Mineral & Energy Resources', description: 'Distribution of Iron, Coal, Oil, Non-conventional Energy' },
-          { id: 'transport-india', name: 'Transport & Infrastructure', description: 'Railways, Roadways, Ports, Inland Waterways' }
+          { id: 'ind-physio-north', name: 'Physiography: Himalayas', description: 'Ranges, Passes, Glaciers' },
+          { id: 'ind-physio-plains', name: 'Physiography: Great Plains', description: 'Bhabar, Terai, Bhangar, Khadar' },
+          { id: 'ind-physio-plateau', name: 'Physiography: Plateau', description: 'Deccan, Central Highlands, Hills' },
+          { id: 'ind-physio-coast', name: 'Coastal Plains & Islands', description: 'Coasts, Andaman & Nicobar, Lakshadweep' },
+          { id: 'ind-river-himal', name: 'Rivers: Himalayan System', description: 'Indus, Ganga, Brahmaputra systems' },
+          { id: 'ind-river-penin', name: 'Rivers: Peninsular System', description: 'Godavari, Krishna, Kaveri, Mahanadi' },
+          { id: 'ind-monsoon', name: 'Climate & Monsoons', description: 'Mechanism, Seasons, Rainfall patterns' },
+          { id: 'ind-soils', name: 'Soils of India', description: 'Alluvial, Black, Red, Laterite, Conservation' },
+          { id: 'ind-forests', name: 'Natural Vegetation', description: 'Forest types, Wildlife Sanctuaries, Biospheres' },
+          { id: 'ind-agri', name: 'Agriculture & Crops', description: 'Rabi/Kharif, Major crops, Green Revolution' },
+          { id: 'ind-minerals', name: 'Mineral Resources', description: 'Iron, Coal, Manganese, Bauxite belts' },
+          { id: 'ind-transport', name: 'Transport & Infrastructure', description: 'Railways, NH, Ports, Inland Waterways' }
         ]
       },
       {
         id: 'world-geography',
         name: 'World Geography',
         topics: [
-          { id: 'mapping-continents', name: 'Mapping (Continents)', description: 'Key Physical Features, Straits, Islands, Deserts' },
-          { id: 'economic-geography', name: 'Economic Geography', description: 'Global Resources, Industries, Trade Routes' },
-          { id: 'human-geography', name: 'Human Geography', description: 'Tribes, Demographics, Migration Patterns' }
+          { id: 'world-asia', name: 'Continent: Asia', description: 'Physical features, Straits, Deserts' },
+          { id: 'world-africa', name: 'Continent: Africa', description: 'Rift Valley, Rivers, Savanna' },
+          { id: 'world-namerica', name: 'Continent: North America', description: 'Lakes, Prairies, Mountains' },
+          { id: 'world-samerica', name: 'Continent: South America', description: 'Amazon, Andes, Pampas' },
+          { id: 'world-europe', name: 'Continent: Europe', description: 'Peninsulas, Rivers, Alps' },
+          { id: 'world-aus', name: 'Continent: Australia', description: 'Great Barrier Reef, Deserts' },
+          { id: 'world-economic', name: 'Economic Geography', description: 'Global transport, Resources, Industry' }
         ]
       }
     ]
