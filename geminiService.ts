@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { Question, SectionType, ConceptBrief } from "./types.ts";
 import { getGenericFallback } from "./fallbackData.ts";
@@ -6,17 +7,27 @@ const FAST_MODEL = "gemini-2.5-flash";
 
 /**
  * KEY ROTATION LOGIC
- * Supports multiple API keys separated by commas in the environment variable.
- * Usage: API_KEY="key1,key2,key3"
+ * Supports multiple API keys separated by commas.
+ * The vite.config.ts now aggregates AIzaSy_Key1...5 into process.env.API_KEY
  */
-const API_KEYS = (process.env.API_KEY || "").split(",").map(k => k.trim()).filter(k => k);
+const API_KEYS = (process.env.API_KEY || "")
+  .split(",")
+  .map(k => k.trim())
+  .filter(k => k.length > 0);
+
 let keyIndex = 0;
+
+// Log key status for debugging (Safe: does not log actual keys)
+if (API_KEYS.length > 0) {
+  console.log(`[System] Intel Uplink Established: ${API_KEYS.length} Active Key(s) Detected.`);
+} else {
+  console.warn("[System] No API Keys detected. Offline Vault will be used.");
+}
 
 const getNextApiKey = (): string => {
   if (API_KEYS.length === 0) return "";
   const key = API_KEYS[keyIndex];
   keyIndex = (keyIndex + 1) % API_KEYS.length;
-  // console.log(`[System] Rotating to Key Index: ${keyIndex}`); // Debug log (optional)
   return key;
 };
 
@@ -64,8 +75,14 @@ const generateBatch = async (
   count: number, 
   offset: number
 ): Promise<Question[]> => {
-  // Use a rotated key for this specific request
-  const ai = new GoogleGenAI({ apiKey: getNextApiKey() });
+  const apiKey = getNextApiKey();
+  
+  // Immediate fail-safe if no keys exist, triggering the catch block in generateQuestions
+  if (!apiKey) {
+    throw new Error("No API Key available");
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
   
   const constraint = getFormatInstruction(topicName);
 
@@ -134,7 +151,7 @@ export const generateQuestions = async (
     
     return batches.flat();
   } catch (error) {
-    console.error("Parallel Generation Failed:", error);
+    console.error("Parallel Generation Failed or No Keys:", error);
     return getGenericFallback(topicName);
   }
 };
@@ -144,8 +161,10 @@ export const generateQuestions = async (
  * Fetches both the strategic brief AND the detailed explanation in one go.
  */
 export const getDetailedConceptBrief = async (questionText: string, topicName: string): Promise<ConceptBrief> => {
-  // Rotate key for explanation fetch as well
-  const ai = new GoogleGenAI({ apiKey: getNextApiKey() });
+  const apiKey = getNextApiKey();
+  if (!apiKey) throw new Error("No API Key available for explanation");
+
+  const ai = new GoogleGenAI({ apiKey });
 
   const response = await ai.models.generateContent({
     model: FAST_MODEL,
