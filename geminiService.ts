@@ -31,6 +31,9 @@ const getNextApiKey = (): string => {
   return key;
 };
 
+// Helper for delay to prevent hitting rate limits instantly
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 /**
  * HELPER: Determines the specific formatting rule based on topic.
  */
@@ -92,38 +95,43 @@ const generateBatch = async (
   Schema: id (string), text (string), options (string[]), correctAnswer (0-3 int).
   Constraint: ${constraint}`;
 
-  const response = await ai.models.generateContent({
-    model: FAST_MODEL,
-    contents: `Generate ${count} hard questions for ${topicName}. Batch ID: ${offset}`,
-    config: {
-      systemInstruction,
-      temperature: 0.6,
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.ARRAY,
-        items: {
-          type: Type.OBJECT,
-          properties: {
-            id: { type: Type.STRING },
-            text: { type: Type.STRING },
-            options: { type: Type.ARRAY, items: { type: Type.STRING } },
-            correctAnswer: { type: Type.INTEGER }
-          },
-          required: ["id", "text", "options", "correctAnswer"]
+  try {
+    const response = await ai.models.generateContent({
+      model: FAST_MODEL,
+      contents: `Generate ${count} hard questions for ${topicName}. Batch ID: ${offset}`,
+      config: {
+        systemInstruction,
+        temperature: 0.6,
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              id: { type: Type.STRING },
+              text: { type: Type.STRING },
+              options: { type: Type.ARRAY, items: { type: Type.STRING } },
+              correctAnswer: { type: Type.INTEGER }
+            },
+            required: ["id", "text", "options", "correctAnswer"]
+          }
         }
       }
-    }
-  });
+    });
 
-  const text = (response.text || "").replace(/```json|```/g, "").trim();
-  const rawQuestions = JSON.parse(text) as any[];
-  
-  // Ensure IDs are unique across batches
-  return rawQuestions.map((q, idx) => ({
-    ...q,
-    id: `${Date.now()}-${offset}-${idx}`,
-    options: q.options.slice(0, 4) // Ensure strictly 4 options
-  }));
+    const text = (response.text || "").replace(/```json|```/g, "").trim();
+    const rawQuestions = JSON.parse(text) as any[];
+    
+    // Ensure IDs are unique across batches
+    return rawQuestions.map((q, idx) => ({
+      ...q,
+      id: `${Date.now()}-${offset}-${idx}`,
+      options: q.options.slice(0, 4) // Ensure strictly 4 options
+    }));
+  } catch (error) {
+    console.warn(`Batch ${offset} failed:`, error);
+    throw error; // Re-throw to be caught by allSettled
+  }
 };
 
 /**
@@ -139,17 +147,32 @@ export const generateQuestions = async (
 ): Promise<Question[]> => {
   try {
     // Parallel Execution: Launch FIVE workers simultaneously
-    // 5 workers x 3 questions = 15 total questions.
-    // This utilizes up to 5 different API keys if provided.
-    const batches = await Promise.all([
-      generateBatch(topicName, 3, 0),
-      generateBatch(topicName, 3, 1),
-      generateBatch(topicName, 3, 2),
-      generateBatch(topicName, 3, 3),
-      generateBatch(topicName, 3, 4)
-    ]);
-    
-    return batches.flat();
+    // Stagger starts by 300ms to avoid hitting Rate Limit (429) spikes on a single second.
+    const batchPromises = [0, 1, 2, 3, 4].map(async (offset) => {
+      await delay(offset * 300); 
+      return generateBatch(topicName, 3, offset);
+    });
+
+    // Use allSettled so one failure doesn't kill the entire exam
+    const results = await Promise.allSettled(batchPromises);
+
+    // Aggregate successful batches
+    const successfulQuestions = results
+      .filter((r): r is PromiseFulfilledResult<Question[]> => r.status === 'fulfilled')
+      .map(r => r.value)
+      .flat();
+
+    // If we have at least one batch (3 questions), let the user proceed.
+    // Otherwise, if completely empty, throw error to trigger Vault fallback.
+    if (successfulQuestions.length > 0) {
+      if (successfulQuestions.length < 15) {
+        console.warn(`[System] Partial failure detected. Operating at ${successfulQuestions.length}/15 capacity.`);
+      }
+      return successfulQuestions;
+    } else {
+      throw new Error("All API channels failed.");
+    }
+
   } catch (error) {
     console.error("Parallel Generation Failed or No Keys:", error);
     return getGenericFallback(topicName);
