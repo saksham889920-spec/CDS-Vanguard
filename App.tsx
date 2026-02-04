@@ -26,17 +26,15 @@ const App: React.FC = () => {
     setError(null);
     try {
       // PHASE 1: Parallel Sprint (Questions + Options + CorrectAnswer)
-      // Uses 5x Concurrent Workers for max speed.
       const generated = await generateQuestions(subject.section, subject.name, topic.id, topic.name);
       setQuestions(generated);
       setSelectedTopic(topic);
       setState('EXAM');
       
-      // NOTE: Explanations are now fetched strictly on-demand in the Results view.
-      // This eliminates the Phase 2 background wait time entirely.
-      
     } catch (err) {
       console.error(err);
+      // NOTE: We generally won't hit this because generateQuestions now handles errors 
+      // by returning fallback data instead of throwing.
       setError("Vault fallback activated.");
       setState('ERROR');
     }
@@ -55,6 +53,9 @@ const App: React.FC = () => {
     setQuestions([]);
     setResponses([]);
   };
+
+  // Check if we are running in Offline Mode based on question ID
+  const isOfflineMode = questions.length > 0 && questions[0].id.startsWith('vault-');
 
   const renderHome = () => (
     <div className="max-w-6xl mx-auto px-4 py-12 animate-fade-in">
@@ -77,7 +78,7 @@ const App: React.FC = () => {
             onClick={() => {
               if (item.sub) {
                 setSelectedSubject(item.sub);
-                setSelectedCategory(null); // FIX: Ensure category is cleared to avoid cross-contamination
+                setSelectedCategory(null); 
                 setState('TOPIC_SELECTION');
               } else {
                 setSelectedSubject(null);
@@ -115,7 +116,7 @@ const App: React.FC = () => {
           <div key={sub.id} 
             onClick={() => { 
               setSelectedSubject(sub); 
-              setSelectedCategory(null); // FIX: Clear any previous category selection
+              setSelectedCategory(null); 
               if(sub.categories) setState('CATEGORY_SELECTION'); 
               else setState('TOPIC_SELECTION'); 
             }} 
@@ -155,11 +156,8 @@ const App: React.FC = () => {
   );
 
   const renderTopicSelection = () => {
-    // Logic: If a category is selected (GK), show its topics. Otherwise show Subject topics (Maths/English).
-    // The previous bug was due to selectedCategory lingering when switching to English.
     const topics = selectedCategory ? selectedCategory.topics : selectedSubject?.topics;
     
-    // Determine back destination
     let backAction;
     if (selectedCategory) {
       backAction = () => { setSelectedCategory(null); setState('CATEGORY_SELECTION'); };
@@ -218,10 +216,6 @@ const App: React.FC = () => {
           </div>
         ))}
       </div>
-      
-      <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mt-10 opacity-70">
-        Aggregating Intelligence from Multiple Vectors...
-      </p>
     </div>
   );
 
@@ -229,7 +223,7 @@ const App: React.FC = () => {
     <div className="flex flex-col items-center justify-center min-h-[70vh] p-8 text-center">
       <div className="w-24 h-24 bg-red-50 text-red-600 rounded-[2.5rem] flex items-center justify-center text-5xl mb-8 shadow-inner border border-red-100">⚠️</div>
       <h2 className="text-3xl font-black text-slate-900 uppercase mb-4 tracking-tight">System Override</h2>
-      <p className="text-slate-500 max-w-sm mb-10 font-medium">The intelligence server is currently unreachable. You may initiate a pre-cached offline simulation or re-establish connection.</p>
+      <p className="text-slate-500 max-w-sm mb-10 font-medium">The intelligence server is currently unreachable. Retrying...</p>
       <button onClick={() => startExam(selectedSubject!, selectedTopic!)} className="px-14 py-4 bg-slate-900 text-white rounded-full font-black uppercase text-xs tracking-[0.3em] shadow-xl hover:bg-indigo-600 transition-all">Retry Simulation</button>
     </div>
   );
@@ -247,10 +241,18 @@ const App: React.FC = () => {
           </div>
 
           <div className="flex items-center space-x-4">
-            <div className="hidden md:flex items-center space-x-2 bg-slate-50 px-5 py-2.5 rounded-full border border-slate-100">
-               <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
-               <span className="text-emerald-600 font-black text-[9px] uppercase tracking-widest leading-none">Ready</span>
-            </div>
+            {isOfflineMode && (
+              <div className="flex items-center space-x-2 bg-amber-50 px-5 py-2.5 rounded-full border border-amber-100">
+                 <span className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></span>
+                 <span className="text-amber-600 font-black text-[9px] uppercase tracking-widest leading-none">Offline Simulation</span>
+              </div>
+            )}
+            {!isOfflineMode && (
+              <div className="hidden md:flex items-center space-x-2 bg-slate-50 px-5 py-2.5 rounded-full border border-slate-100">
+                 <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
+                 <span className="text-emerald-600 font-black text-[9px] uppercase tracking-widest leading-none">Ready</span>
+              </div>
+            )}
           </div>
         </div>
       </nav>

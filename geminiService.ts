@@ -124,18 +124,21 @@ export const generateQuestions = async (
   topicName: string
 ): Promise<Question[]> => {
   try {
+    // If no keys are present, skip directly to vault
+    if (API_KEYS.length === 0) {
+      throw new Error("No API Keys configured");
+    }
+
     // 5 Batches x 3 Questions = 15 Total Target
     const batches = [0, 1, 2, 3, 4];
 
     // Fire all requests immediately (Parallel)
-    // We use a tiny stagger (100ms) just to ensure unique timestamps/key rotation happens cleanly
     const batchPromises = batches.map(async (i) => {
-      await delay(i * 100); 
+      await delay(i * 300); // Increased stagger slightly to 300ms to be safer
       return generateBatch(topicName, 3, i);
     });
 
     // Promise.allSettled waits for all to finish (either success or fail)
-    // It does NOT throw if one fails.
     const results = await Promise.allSettled(batchPromises);
 
     // Filter only the successful batches
@@ -145,11 +148,7 @@ export const generateQuestions = async (
       .flat();
 
     // LOGIC: If we have ANY questions, we return them.
-    // Even if we only got 3 questions (1 batch), that's better than Vault Mode.
     if (successfulQuestions.length > 0) {
-      if (successfulQuestions.length < 15) {
-        console.warn(`[System] Partial Yield: ${successfulQuestions.length}/15 questions generated.`);
-      }
       return successfulQuestions;
     } else {
       // Only throw if 0 questions were generated (All keys failed)
@@ -157,9 +156,9 @@ export const generateQuestions = async (
     }
 
   } catch (error) {
-    console.error("Critical Failure:", error);
-    // Return Fallback (Vault Mode)
-    return getGenericFallback(topicName);
+    console.error("Critical Failure, switching to Offline Vault:", error);
+    // Return Fallback with Topic ID for accurate offline mapping
+    return getGenericFallback(topicName, topicId);
   }
 };
 
@@ -167,31 +166,42 @@ export const generateQuestions = async (
  * PHASE 3: ON-DEMAND INTEL
  */
 export const getDetailedConceptBrief = async (questionText: string, topicName: string): Promise<ConceptBrief> => {
-  const apiKey = getNextApiKey();
-  if (!apiKey) throw new Error("No API Key available");
+  try {
+    const apiKey = getNextApiKey();
+    if (!apiKey) throw new Error("No API Key available");
 
-  const ai = new GoogleGenAI({ apiKey });
+    const ai = new GoogleGenAI({ apiKey });
 
-  const response = await ai.models.generateContent({
-    model: FAST_MODEL,
-    contents: `Analyze this UPSC Question: "${questionText}" (${topicName})`,
-    config: {
-      systemInstruction: "Expert UPSC Strategist. Provide a detailed explanation of the correct answer and a strategic brief. JSON format.",
-      temperature: 0.5,
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          explanation: { type: Type.STRING },
-          corePrinciple: { type: Type.STRING },
-          upscContext: { type: Type.STRING },
-          strategicApproach: { type: Type.STRING },
-          recallHacks: { type: Type.STRING }
-        },
-        required: ["explanation", "corePrinciple", "upscContext", "strategicApproach", "recallHacks"]
+    const response = await ai.models.generateContent({
+      model: FAST_MODEL,
+      contents: `Analyze this UPSC Question: "${questionText}" (${topicName})`,
+      config: {
+        systemInstruction: "Expert UPSC Strategist. Provide a detailed explanation of the correct answer and a strategic brief. JSON format.",
+        temperature: 0.5,
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            explanation: { type: Type.STRING },
+            corePrinciple: { type: Type.STRING },
+            upscContext: { type: Type.STRING },
+            strategicApproach: { type: Type.STRING },
+            recallHacks: { type: Type.STRING }
+          },
+          required: ["explanation", "corePrinciple", "upscContext", "strategicApproach", "recallHacks"]
+        }
       }
-    }
-  });
+    });
 
-  return JSON.parse(response.text.trim()) as ConceptBrief;
+    return JSON.parse(response.text.trim()) as ConceptBrief;
+  } catch (e) {
+    // Offline Fallback for Explanations
+    return {
+      explanation: "Offline Mode: Explanation unavailable. Review standard textbooks.",
+      corePrinciple: "Offline Vault Data",
+      upscContext: "Standard Syllabus",
+      strategicApproach: "Refer to class notes.",
+      recallHacks: "N/A"
+    };
+  }
 };
