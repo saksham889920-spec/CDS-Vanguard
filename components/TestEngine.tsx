@@ -20,7 +20,8 @@ const TestEngine: React.FC<TestEngineProps> = ({ questions, subject, topic, onFi
 
   const [timeLeft, setTimeLeft] = useState(getInitialTime());
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  // Use any to avoid "Cannot find namespace NodeJS" error in browser environments
+  const timerRef = useRef<any>(null);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);

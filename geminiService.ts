@@ -1,9 +1,10 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { Question, SectionType, ConceptBrief } from "./types";
-import { FALLBACK_QUESTIONS, getGenericFallback } from "./fallbackData";
+import { Question, SectionType, ConceptBrief } from "./types.ts";
+import { FALLBACK_QUESTIONS, getGenericFallback } from "./fallbackData.ts";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+// Initialize GenAI client strictly using the environment variable named parameter
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export const generateQuestions = async (
   section: SectionType,
@@ -11,7 +12,8 @@ export const generateQuestions = async (
   topicId: string,
   topicName: string
 ): Promise<Question[]> => {
-  const model = "gemini-3-flash-preview";
+  // Use gemini-3-pro-preview for complex reasoning and academic content generation
+  const model = "gemini-3-pro-preview";
   
   const systemInstruction = `
     You are an expert UPSC (CDS) Exam Content Strategist. 
@@ -66,7 +68,8 @@ export const generateQuestions = async (
 };
 
 export const getDetailedConceptBrief = async (question: string, topic: string): Promise<ConceptBrief> => {
-  const model = "gemini-3-flash-preview";
+  // Use gemini-3-pro-preview for high-density strategic educational content
+  const model = "gemini-3-pro-preview";
   const prompt = `Provide a structured study brief for a CDS candidate on: "${question}" within the topic "${topic}".`;
 
   try {

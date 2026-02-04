@@ -1,10 +1,10 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { SYLLABUS } from './constants';
-import { Subject, Topic, Question, UserResponse, SectionType, Category } from './types';
-import { generateQuestions } from './geminiService';
-import TestEngine from './components/TestEngine';
-import ResultView from './components/ResultView';
+import { SYLLABUS } from './constants.ts';
+import { Subject, Topic, Question, UserResponse, SectionType, Category } from './types.ts';
+import { generateQuestions } from './geminiService.ts';
+import TestEngine from './components/TestEngine.tsx';
+import ResultView from './components/ResultView.tsx';
 
 type AppState = 'HOME' | 'GK_SUBJECT_SELECTION' | 'CATEGORY_SELECTION' | 'TOPIC_SELECTION' | 'LOADING' | 'EXAM' | 'RESULTS' | 'ERROR';
 
