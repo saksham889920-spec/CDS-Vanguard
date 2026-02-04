@@ -29,6 +29,7 @@ export interface Subject {
 }
 
 export interface ConceptBrief {
+  explanation: string; // Moved here for on-demand loading
   corePrinciple: string;
   upscContext: string;
   strategicApproach: string;
@@ -40,8 +41,8 @@ export interface Question {
   text: string;
   options: string[];
   correctAnswer: number; // REQUIRED: Generated in Phase 1 for accuracy
-  explanation?: string;  // Optional: Loaded in Phase 2
-  intelBrief?: ConceptBrief; // Optional: Loaded in Phase 2
+  explanation?: string;  // Deprecated in favor of on-demand Intel
+  intelBrief?: ConceptBrief; // Optional: Loaded in Phase 3
 }
 
 export interface UserResponse {

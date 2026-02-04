@@ -3,13 +3,63 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { Question, SectionType, ConceptBrief } from "./types.ts";
 import { getGenericFallback } from "./fallbackData.ts";
 
-// Using the fastest stable model available
 const FAST_MODEL = "gemini-flash-latest";
 
 /**
- * PHASE 1: AUTHORITATIVE SPRINT
- * Generates Question, Options, AND Correct Answer.
- * Optimized for sub-5-second latency.
+ * HELPER: Generates a small batch of questions.
+ * Used for parallel execution.
+ */
+const generateBatch = async (
+  topicName: string, 
+  count: number, 
+  offset: number
+): Promise<Question[]> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  
+  const systemInstruction = `UPSC CDS Exam Generator. Topic: ${topicName}. 
+  Task: Generate ${count} MCQs.
+  Output: JSON Array. 
+  Schema: id (string), text (string), options (string[]), correctAnswer (0-3 int).
+  Constraint: No markdown. concise text.`;
+
+  const response = await ai.models.generateContent({
+    model: FAST_MODEL,
+    contents: `Generate ${count} hard MCQs for ${topicName}. Batch ID: ${offset}`,
+    config: {
+      systemInstruction,
+      temperature: 0.6,
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            id: { type: Type.STRING },
+            text: { type: Type.STRING },
+            options: { type: Type.ARRAY, items: { type: Type.STRING } },
+            correctAnswer: { type: Type.INTEGER }
+          },
+          required: ["id", "text", "options", "correctAnswer"]
+        }
+      }
+    }
+  });
+
+  const text = (response.text || "").replace(/```json|```/g, "").trim();
+  const rawQuestions = JSON.parse(text) as any[];
+  
+  // Ensure IDs are unique across batches
+  return rawQuestions.map((q, idx) => ({
+    ...q,
+    id: `${Date.now()}-${offset}-${idx}`,
+    options: q.options.slice(0, 4) // Ensure strictly 4 options
+  }));
+};
+
+/**
+ * PHASE 1: PARALLEL SPRINT
+ * Splits 10 questions into 2 parallel requests of 5.
+ * Theoretical Speedup: ~40-50% faster than generating 10 sequentially.
  */
 export const generateQuestions = async (
   section: SectionType,
@@ -17,113 +67,44 @@ export const generateQuestions = async (
   topicId: string,
   topicName: string
 ): Promise<Question[]> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  
-  // Extremely concise system instruction to prevent model rambling
-  const systemInstruction = `UPSC CDS Exam Generator. Topic: ${topicName}. 
-  Output: JSON Array (10 items). 
-  Schema: id (string), text (string), options (string[]), correctAnswer (0-3 int).
-  Constraint: No markdown, no conversational filler.`;
-
   try {
-    const response = await ai.models.generateContent({
-      model: FAST_MODEL,
-      contents: `Generate 10 hard MCQs for ${topicName}.`,
-      config: {
-        systemInstruction,
-        temperature: 0.5,
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              id: { type: Type.STRING },
-              text: { type: Type.STRING },
-              options: { type: Type.ARRAY, items: { type: Type.STRING } },
-              correctAnswer: { type: Type.INTEGER }
-            },
-            required: ["id", "text", "options", "correctAnswer"]
-          }
-        }
-      }
-    });
-
-    const text = (response.text || "").replace(/```json|```/g, "").trim();
-    if (!text) throw new Error("Empty Response");
-    return JSON.parse(text) as Question[];
+    // Parallel Execution: Launch two workers simultaneously
+    const [batch1, batch2] = await Promise.all([
+      generateBatch(topicName, 5, 0),
+      generateBatch(topicName, 5, 1)
+    ]);
+    
+    return [...batch1, ...batch2];
   } catch (error) {
-    console.error("Phase 1 Generation Failed:", error);
+    console.error("Parallel Generation Failed:", error);
     return getGenericFallback(topicName);
   }
 };
 
 /**
- * PHASE 2: BACKGROUND EXPLANATIONS (Lightweight)
- * We ONLY fetch explanations here. We do NOT fetch Intel Briefs.
- * This ensures this request finishes before the user completes the first few questions.
- */
-export const fetchEnrichmentData = async (questions: Question[], topicName: string): Promise<Record<string, string>> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
-  // Minimal payload to Context
-  const inputPayload = questions.map(q => ({
-    id: q.id,
-    q: q.text,
-    a: q.options[q.correctAnswer]
-  }));
-
-  const prompt = `Provide a 2-sentence UPSC explanation for each question.
-  Input: ${JSON.stringify(inputPayload)}`;
-
-  try {
-    const response = await ai.models.generateContent({
-      model: FAST_MODEL,
-      contents: prompt,
-      config: {
-        systemInstruction: "Return a JSON Object where Key=QuestionID and Value=ExplanationString.",
-        temperature: 0.3,
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          additionalProperties: {
-            type: Type.STRING
-          }
-        }
-      }
-    });
-
-    const text = (response.text || "").replace(/```json|```/g, "").trim();
-    return JSON.parse(text);
-  } catch (error) {
-    console.error("Phase 2 Enrichment Failed:", error);
-    return {};
-  }
-};
-
-/**
- * PHASE 3: ON-DEMAND INTEL (Click-to-Load)
- * High detailed strategy, fetched only when requested.
+ * PHASE 3: ON-DEMAND INTEL & EXPLANATION
+ * Fetches both the strategic brief AND the detailed explanation in one go.
  */
 export const getDetailedConceptBrief = async (questionText: string, topicName: string): Promise<ConceptBrief> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
   const response = await ai.models.generateContent({
     model: FAST_MODEL,
-    contents: `Strategic Brief for: "${questionText}" (${topicName})`,
+    contents: `Analyze this UPSC Question: "${questionText}" (${topicName})`,
     config: {
-      systemInstruction: "UPSC Strategist. JSON: corePrinciple, upscContext, strategicApproach, recallHacks.",
+      systemInstruction: "Expert UPSC Strategist. Provide a detailed explanation of the correct answer and a strategic brief. JSON format.",
       temperature: 0.5,
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.OBJECT,
         properties: {
+          explanation: { type: Type.STRING, description: "Detailed explanation of why the answer is correct and others are wrong." },
           corePrinciple: { type: Type.STRING },
           upscContext: { type: Type.STRING },
           strategicApproach: { type: Type.STRING },
           recallHacks: { type: Type.STRING }
         },
-        required: ["corePrinciple", "upscContext", "strategicApproach", "recallHacks"]
+        required: ["explanation", "corePrinciple", "upscContext", "strategicApproach", "recallHacks"]
       }
     }
   });

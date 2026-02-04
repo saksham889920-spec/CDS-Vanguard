@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { SYLLABUS } from './constants.ts';
 import { Subject, Topic, Question, UserResponse, SectionType, Category } from './types.ts';
-import { generateQuestions, fetchEnrichmentData } from './geminiService.ts';
+import { generateQuestions } from './geminiService.ts';
 import TestEngine from './components/TestEngine.tsx';
 import ResultView from './components/ResultView.tsx';
 
@@ -15,7 +15,6 @@ const App: React.FC = () => {
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [responses, setResponses] = useState<UserResponse[]>([]);
-  const [isKeyLoading, setIsKeyLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const englishSubject = useMemo(() => SYLLABUS.find(s => s.id === 'english'), []);
@@ -26,28 +25,16 @@ const App: React.FC = () => {
     setState('LOADING');
     setError(null);
     try {
-      // PHASE 1: Sprint (Questions + Options + CorrectAnswer)
-      // Fast Model (< 5 seconds)
+      // PHASE 1: Parallel Sprint (Questions + Options + CorrectAnswer)
+      // Uses 2x Concurrent Workers for max speed.
       const generated = await generateQuestions(subject.section, subject.name, topic.id, topic.name);
       setQuestions(generated);
       setSelectedTopic(topic);
       setState('EXAM');
-
-      // PHASE 2: Background Explanations (Lightweight)
-      // We do NOT fetch Intel Briefs here to save time/bandwidth.
-      setIsKeyLoading(true);
-      fetchEnrichmentData(generated, topic.name).then(explanationMap => {
-        setQuestions(prev => prev.map(q => ({
-          ...q,
-          explanation: explanationMap[q.id] ?? "Explanation unavailable.",
-          intelBrief: undefined // Will be loaded on demand
-        })));
-        setIsKeyLoading(false);
-      }).catch((e) => {
-        console.error("Background enrichment failed", e);
-        setIsKeyLoading(false);
-      });
-
+      
+      // NOTE: Explanations are now fetched strictly on-demand in the Results view.
+      // This eliminates the Phase 2 background wait time entirely.
+      
     } catch (err) {
       console.error(err);
       setError("Vault fallback activated.");
@@ -195,7 +182,7 @@ const App: React.FC = () => {
         <div className="absolute top-0 left-0 w-20 h-20 flex items-center justify-center text-[10px] font-black text-slate-900">INTEL</div>
       </div>
       <h2 className="text-2xl font-black text-slate-900 uppercase tracking-[0.5em] mb-2">Assembling Vault</h2>
-      <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">Deploying conceptual simulation in &lt; 5 seconds...</p>
+      <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">Deploying concurrent simulation streams...</p>
     </div>
   );
 
@@ -257,7 +244,7 @@ const App: React.FC = () => {
       </main>
       
       <footer className="py-20 border-t border-slate-100 text-center bg-slate-50/50">
-        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.5em]">CDS VANGUARD • Strategic UPSC Engine • v4.5 (Hyper-Stream)</p>
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.5em]">CDS VANGUARD • Strategic UPSC Engine • v5.0 (Parallel Core)</p>
       </footer>
     </div>
   );

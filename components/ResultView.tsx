@@ -69,8 +69,7 @@ const ResultView: React.FC<ResultViewProps> = ({ questions, responses, subject, 
           const userResp = responses.find(r => r.questionId === q.id);
           const isCorrect = userResp?.isCorrect;
           const userIdx = userResp?.selectedOption;
-          // Check if brief is already pre-loaded from Phase 2, or locally loaded via click
-          const brief = q.intelBrief || briefs[q.id];
+          const brief = briefs[q.id];
           const isLoading = loadingBriefs[q.id];
 
           return (
@@ -107,14 +106,16 @@ const ResultView: React.FC<ResultViewProps> = ({ questions, responses, subject, 
                 })}
               </div>
 
+              {/* Combined Explanation & Intel Section */}
               <div className="space-y-4">
-                <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
-                  <h5 className="text-[9px] font-black uppercase tracking-[0.2em] mb-2 text-slate-400">Explanation</h5>
-                  <p className="text-slate-600 text-sm leading-relaxed">{q.explanation || "Analysis pending..."}</p>
-                </div>
-
                 {brief ? (
                   <div className="animate-fade-in space-y-4 pt-4 border-t border-slate-100">
+                    {/* New Detailed Explanation Section */}
+                    <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 mb-4">
+                      <h5 className="text-[9px] font-black uppercase tracking-[0.2em] mb-2 text-slate-400">Analysis</h5>
+                      <p className="text-slate-600 text-sm leading-relaxed">{brief.explanation}</p>
+                    </div>
+
                     <div className="bg-slate-900 text-white rounded-3xl p-8 relative overflow-hidden shadow-xl">
                       <div className="flex items-center space-x-3 mb-4">
                         <span className="text-2xl">🏛️</span>
@@ -150,11 +151,11 @@ const ResultView: React.FC<ResultViewProps> = ({ questions, responses, subject, 
                     {isLoading ? (
                       <>
                         <div className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-                        <span>Acquiring Mission Intel...</span>
+                        <span>Declassifying Intel & Analysis...</span>
                       </>
                     ) : (
                       <>
-                        <span>🛡️ Engage Mission Intel</span>
+                        <span>🛡️ Reveal Explanation & Intel</span>
                       </>
                     )}
                   </button>
