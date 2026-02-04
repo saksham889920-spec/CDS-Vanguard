@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
-import { Question, UserResponse, Subject, Topic } from '../types';
+import { Question, UserResponse, Subject, Topic, ConceptBrief } from '../types';
+import { getDetailedConceptBrief } from '../geminiService';
 
 interface ResultViewProps {
   questions: Question[];
@@ -11,14 +12,26 @@ interface ResultViewProps {
 }
 
 const ResultView: React.FC<ResultViewProps> = ({ questions, responses, subject, topic, onRestart }) => {
-  const [revealedBriefs, setRevealedBriefs] = useState<Record<string, boolean>>({});
+  const [briefs, setBriefs] = useState<Record<string, ConceptBrief>>({});
+  const [loadingBriefs, setLoadingBriefs] = useState<Record<string, boolean>>({});
 
   const correctCount = responses.filter(r => r.isCorrect).length;
   const attemptedCount = responses.filter(r => r.selectedOption !== null).length;
   const score = (correctCount * 1) - ((attemptedCount - correctCount) * 0.33);
 
-  const toggleBrief = (qId: string) => {
-    setRevealedBriefs(prev => ({ ...prev, [qId]: !prev[qId] }));
+  const handleExpandBrief = async (qId: string, qText: string) => {
+    // If already loaded or currently loading, ignore
+    if (briefs[qId] || loadingBriefs[qId]) return;
+
+    setLoadingBriefs(prev => ({ ...prev, [qId]: true }));
+    try {
+      const brief = await getDetailedConceptBrief(qText, topic.name);
+      setBriefs(prev => ({ ...prev, [qId]: brief }));
+    } catch (error) {
+      console.error("Failed to load intel brief:", error);
+    } finally {
+      setLoadingBriefs(prev => ({ ...prev, [qId]: false }));
+    }
   };
 
   return (
@@ -57,8 +70,8 @@ const ResultView: React.FC<ResultViewProps> = ({ questions, responses, subject, 
           const userResp = responses.find(r => r.questionId === q.id);
           const isCorrect = userResp?.isCorrect;
           const userIdx = userResp?.selectedOption;
-          const isBriefVisible = revealedBriefs[q.id];
-          const brief = q.intelBrief;
+          const brief = briefs[q.id];
+          const isLoading = loadingBriefs[q.id];
 
           return (
             <div key={q.id} className="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm transition-all hover:shadow-lg">
@@ -100,7 +113,7 @@ const ResultView: React.FC<ResultViewProps> = ({ questions, responses, subject, 
                   <p className="text-slate-600 text-sm leading-relaxed">{q.explanation}</p>
                 </div>
 
-                {isBriefVisible && brief ? (
+                {brief ? (
                   <div className="animate-fade-in space-y-4 pt-4 border-t border-slate-100">
                     <div className="bg-slate-900 text-white rounded-3xl p-8 relative overflow-hidden shadow-xl">
                       <div className="flex items-center space-x-3 mb-4">
@@ -129,8 +142,21 @@ const ResultView: React.FC<ResultViewProps> = ({ questions, responses, subject, 
                     </div>
                   </div>
                 ) : (
-                  <button onClick={() => toggleBrief(q.id)} className="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 text-[10px] font-black uppercase tracking-widest hover:border-indigo-400 hover:text-indigo-600 transition-all">
-                    Expand Mission Brief
+                  <button 
+                    onClick={() => handleExpandBrief(q.id, q.text)} 
+                    disabled={isLoading}
+                    className="w-full py-5 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 text-[10px] font-black uppercase tracking-widest hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50/30 transition-all flex items-center justify-center space-x-3"
+                  >
+                    {isLoading ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                        <span>Acquiring Mission Intel...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>🛡️ Engage Mission Intel</span>
+                      </>
+                    )}
                   </button>
                 )}
               </div>
